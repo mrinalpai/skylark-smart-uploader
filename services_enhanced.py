@@ -549,28 +549,107 @@ class DriveService:
 
 
 class NamingConventionService:
-    """Handle naming convention document processing"""
+    """Handle naming convention document processing with version-based cache"""
     
     def __init__(self, drive_service=None, document_id=None):
         self.drive_service = drive_service
         self.document_id = document_id or "1IqpsMdfAjGx3H2l6SyRWcRH3red40c6AosMORn0oQes"
         self._cached_rules = None
+        self._cached_modified_time = None
     
     def get_naming_rules(self):
-        """Get naming convention rules from document"""
+        """Get naming convention rules from document with version-based cache"""
+        # Check if document has been modified since last cache
+        if self._should_refresh_cache():
+            print(f"🔄 Document modified, refreshing naming convention cache")
+            self._refresh_cache()
+        
+        # Return cached rules if available
         if self._cached_rules:
             return self._cached_rules
         
-        if self.drive_service and self.drive_service.is_available():
-            print(f"📖 Reading naming convention document: {self.document_id}")
-            rules = self.drive_service.read_document(self.document_id)
-            if rules:
-                self._cached_rules = rules
-                print("✅ Naming convention rules loaded from document")
-                return rules
-        
+        # Fallback if no cached rules available
         print("🔄 Using fallback naming convention rules")
         return self._fallback_naming_rules()
+    
+    def _should_refresh_cache(self):
+        """Check if cache should be refreshed based on document modification time"""
+        if not self._cached_rules or not self._cached_modified_time:
+            print("📝 No cached rules or modification time, refresh needed")
+            return True
+        
+        if not self.drive_service or not self.drive_service.is_available():
+            print("❌ Drive service not available, using cached rules")
+            return False
+        
+        try:
+            # Get document metadata to check last modified time
+            print(f"🔍 Checking document modification time: {self.document_id}")
+            file_metadata = self.drive_service.service.files().get(
+                fileId=self.document_id,
+                fields="modifiedTime,version"
+            ).execute()
+            
+            current_modified_time = file_metadata.get('modifiedTime')
+            current_version = file_metadata.get('version', 'unknown')
+            
+            print(f"📅 Current modified time: {current_modified_time}")
+            print(f"📅 Cached modified time: {self._cached_modified_time}")
+            print(f"🔢 Document version: {current_version}")
+            
+            # Check if document has been modified
+            if current_modified_time != self._cached_modified_time:
+                print("✅ Document has been modified, cache refresh needed")
+                return True
+            else:
+                print("✅ Document unchanged, using cached rules")
+                return False
+                
+        except Exception as e:
+            print(f"⚠️ Error checking document modification time: {e}")
+            print("🔄 Continuing with cached rules due to metadata check failure")
+            return False
+    
+    def _refresh_cache(self):
+        """Refresh the cache by reading the document and updating metadata"""
+        if not self.drive_service or not self.drive_service.is_available():
+            print("❌ Drive service not available for cache refresh")
+            return
+        
+        try:
+            # Get document metadata first
+            file_metadata = self.drive_service.service.files().get(
+                fileId=self.document_id,
+                fields="modifiedTime,version,name"
+            ).execute()
+            
+            current_modified_time = file_metadata.get('modifiedTime')
+            document_name = file_metadata.get('name', 'Unknown Document')
+            
+            print(f"📖 Reading updated naming convention document: {document_name}")
+            
+            # Read the document content
+            rules = self.drive_service.read_document(self.document_id)
+            
+            if rules:
+                # Update cache with new rules and metadata
+                self._cached_rules = rules
+                self._cached_modified_time = current_modified_time
+                print(f"✅ Naming convention rules updated from document (Modified: {current_modified_time})")
+                print(f"📊 Rules length: {len(rules)} characters")
+            else:
+                print("❌ Failed to read document content, keeping existing cache")
+                
+        except Exception as e:
+            print(f"❌ Error refreshing naming convention cache: {e}")
+            print("🔄 Keeping existing cached rules")
+    
+    def force_refresh(self):
+        """Force refresh the cache (useful for manual refresh operations)"""
+        print("🔄 Force refreshing naming convention cache")
+        self._cached_rules = None
+        self._cached_modified_time = None
+        return self.get_naming_rules()
     
     def _fallback_naming_rules(self):
         """Enhanced fallback naming convention rules"""

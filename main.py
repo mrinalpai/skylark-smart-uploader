@@ -1125,12 +1125,14 @@ HTML_TEMPLATE = """
                 
                 // Update status
                 statusElement.className = 'file-status status-completed';
-                statusElement.textContent = 'Completed';
+                statusElement.textContent = 'Uploaded Successfully';
                 
-                // Show success message
-                setTimeout(() => {
-                    showUploadSuccess(fileId, result);
-                }, 500);
+                // Update file object
+                const fileObj = uploadedFiles.find(f => f.id === fileId);
+                if (fileObj) {
+                    fileObj.status = 'completed';
+                    fileObj.uploadResult = result;
+                }
                 
             } catch (error) {
                 console.error('Upload error:', error);
@@ -1141,39 +1143,6 @@ HTML_TEMPLATE = """
                 
                 alert('Upload failed. Please try again.');
             }
-        }
-        
-        // Show upload success
-        function showUploadSuccess(fileId, result) {
-            const fileItem = document.getElementById(`file-${fileId}`);
-            const successMessage = document.createElement('div');
-            successMessage.className = 'upload-success';
-            successMessage.innerHTML = `
-                <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1)); 
-                           border: 1px solid rgba(16, 185, 129, 0.2); 
-                           border-radius: 12px; 
-                           padding: 20px; 
-                           margin-top: 20px;">
-                    <div style="color: #10B981; font-weight: 700; margin-bottom: 12px;">
-                        ✅ Upload Successful!
-                    </div>
-                    <div style="font-size: 14px; color: #64748B; margin-bottom: 8px;">
-                        <strong>Final Name:</strong> ${result.final_name || 'Processing...'}
-                    </div>
-                    <div style="font-size: 14px; color: #64748B; margin-bottom: 8px;">
-                        <strong>Location:</strong> ${result.folder_path || 'Marketing Hub'}
-                    </div>
-                    <div style="font-size: 14px; color: #64748B; margin-bottom: 12px;">
-                        <strong>File ID:</strong> ${result.file_id || 'Generating...'}
-                    </div>
-                    <a href="${result.file_url || '#'}" target="_blank" 
-                       style="color: #2563EB; text-decoration: none; font-weight: 600; font-size: 14px;">
-                        🔗 View in Google Drive
-                    </a>
-                </div>
-            `;
-            
-            fileItem.appendChild(successMessage);
         }
         
         // Show manual override options

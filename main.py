@@ -623,6 +623,17 @@ HTML_TEMPLATE = """
             overflow: hidden;
         }
         
+        .progress-circle.spinning {
+            border: 2px solid #f3f4f6;
+            border-top: 2px solid var(--skylark-blue);
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
         .progress-fill {
             position: absolute;
             top: 0;
@@ -636,6 +647,14 @@ HTML_TEMPLATE = """
         
         .step-text {
             font-weight: 500;
+        }
+        
+        .time-expectation {
+            font-size: 11px;
+            color: var(--skylark-gray);
+            font-style: italic;
+            margin-top: 4px;
+            opacity: 0.8;
         }
         
         .ai-metrics {
@@ -1117,6 +1136,7 @@ HTML_TEMPLATE = """
                     </div>
                     <div class="analysis-content" id="analysis-${fileId}">
                         Analyzing file content and determining optimal organization...
+                        <div class="time-expectation">⏱️ This typically takes 1-2 minutes</div>
                     </div>
                     <div class="analysis-details" id="details-${fileId}"></div>
                 </div>
@@ -1148,6 +1168,15 @@ HTML_TEMPLATE = """
         // Analyze file with Gemini AI
         async function analyzeFileWithGemini(file, fileId) {
             try {
+                // Start spinning animation
+                const stepIndicator = document.getElementById(`step-indicator-${fileId}`);
+                if (stepIndicator) {
+                    const progressCircle = stepIndicator.querySelector('.progress-circle');
+                    if (progressCircle) {
+                        progressCircle.classList.add('spinning');
+                    }
+                }
+                
                 const response = await fetch('/api/gemini/analyze', {
                     method: 'POST',
                     headers: {
@@ -1232,6 +1261,15 @@ HTML_TEMPLATE = """
                     if (actionButtons) {
                         actionButtons.style.display = 'block';
                     }
+                    
+                    // Stop spinning animation
+                    const stepIndicator = document.getElementById(`step-indicator-${fileId}`);
+                    if (stepIndicator) {
+                        const progressCircle = stepIndicator.querySelector('.progress-circle');
+                        if (progressCircle) {
+                            progressCircle.classList.remove('spinning');
+                        }
+                    }
                 }
                 
                 // Update file object
@@ -1244,13 +1282,25 @@ HTML_TEMPLATE = """
             } catch (error) {
                 console.error('Analysis error:', error);
                 
+                // Stop spinning animation on error
+                const stepIndicator = document.getElementById(`step-indicator-${fileId}`);
+                if (stepIndicator) {
+                    const progressCircle = stepIndicator.querySelector('.progress-circle');
+                    if (progressCircle) {
+                        progressCircle.classList.remove('spinning');
+                    }
+                }
+                
                 // Show error state
                 document.getElementById(`analysis-${fileId}`).innerHTML = 
                     '<strong>Analysis Error</strong><br>Unable to analyze file. Using fallback organization.';
                 
+                // Update status to error
                 const statusElement = document.querySelector(`#file-${fileId} .file-status`);
-                statusElement.className = 'file-status status-ready';
-                statusElement.textContent = 'Ready';
+                if (statusElement) {
+                    statusElement.className = 'file-status status-warning';
+                    statusElement.textContent = 'Error';
+                }
                 
                 // Show action buttons even on error (fallback mode)
                 const actionButtons = document.getElementById(`action-buttons-${fileId}`);

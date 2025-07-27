@@ -1422,6 +1422,11 @@ def upload_file():
         # Parse analysis data
         analysis = json.loads(analysis_data) if analysis_data else {}
         
+        # Calculate file size BEFORE processing
+        file.seek(0, 2)  # Seek to end
+        file_size = file.tell()
+        file.seek(0)  # Reset to beginning
+        
         # Initialize services with user credentials
         access_token = session.get('access_token')
         refresh_token = session.get('refresh_token')
@@ -1495,7 +1500,7 @@ def upload_file():
                 "upload_time": datetime.now().isoformat(),
                 "file_url": f"https://drive.google.com/file/d/{file_id}/view",
                 "ai_engine": "Google Gemini 2.5 Pro",
-                "file_size": len(file.read()),
+                "file_size": file_size,
                 "content_type": file.content_type,
                 "analysis_confidence": analysis.get('folder_data', {}).get('confidence', '85') + '%',
                 "naming_convention_applied": True
@@ -1513,15 +1518,12 @@ def upload_file():
                 "upload_time": datetime.now().isoformat(),
                 "file_url": f"https://drive.google.com/file/d/{fallback_file_id}/view",
                 "ai_engine": "Google Gemini 2.5 Pro (Analysis Only)",
-                "file_size": len(file.read()),
+                "file_size": file_size,
                 "content_type": file.content_type,
                 "analysis_confidence": "85%",
                 "naming_convention_applied": True,
                 "note": "Drive upload requires authentication"
             }
-        
-        # Reset file pointer after reading
-        file.seek(0)
         
         return jsonify(upload_response)
         

@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request, render_template_string, redirect, session, url_for, send_from_directory
+from flask import Flask, request, jsonify, session, redirect, url_for
 from flask_cors import CORS
 import os
 import secrets
@@ -8,8 +8,8 @@ import base64
 import json
 from datetime import datetime
 from google.oauth2.credentials import Credentials
+from google.auth.transport.requests import Request
 from services_enhanced import GeminiService, DriveService, NamingConventionService, IntelligentWorkflowOrchestrator
-
 app = Flask(__name__)
 CORS(app)
 app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(16))
@@ -1618,6 +1618,23 @@ def gemini_analyze():
                     client_secret=GOOGLE_CLIENT_SECRET,
                     scopes=['https://www.googleapis.com/auth/drive']
                 )
+                
+                # Check if token needs refresh and refresh if necessary
+                if credentials.expired and credentials.refresh_token:
+                    print("🔄 Access token expired, attempting refresh...")
+                    try:
+                        credentials.refresh(Request())
+                        # Update session with new token
+                        session['access_token'] = credentials.token
+                        print("✅ Token refreshed successfully")
+                    except Exception as refresh_error:
+                        print(f"❌ Token refresh failed: {refresh_error}")
+                        # Clear invalid credentials but continue with fallback
+                        credentials = None
+                        session.pop('access_token', None)
+                        session.pop('refresh_token', None)
+                        print("⚠️ Continuing with fallback analysis due to auth failure")
+                
                 print(f"✅ Created credentials with token: {access_token[:20]}...")
             except Exception as e:
                 print(f"❌ Error creating credentials: {e}")
@@ -1765,6 +1782,27 @@ def upload_file():
                     client_secret=GOOGLE_CLIENT_SECRET,
                     scopes=['https://www.googleapis.com/auth/drive']
                 )
+                
+                # Check if token needs refresh and refresh if necessary
+                if credentials.expired and credentials.refresh_token:
+                    print("🔄 Access token expired, attempting refresh...")
+                    try:
+                        credentials.refresh(Request())
+                        # Update session with new token
+                        session['access_token'] = credentials.token
+                        print("✅ Token refreshed successfully")
+                    except Exception as refresh_error:
+                        print(f"❌ Token refresh failed: {refresh_error}")
+                        # Clear invalid credentials
+                        credentials = None
+                        session.pop('access_token', None)
+                        session.pop('refresh_token', None)
+                        return jsonify({
+                            "status": "error", 
+                            "message": "Authentication expired. Please log in again.",
+                            "error_type": "auth_expired"
+                        }), 401
+                
                 print("✅ Credentials created successfully for upload")
             except Exception as e:
                 print(f"❌ Error creating credentials for upload: {e}")

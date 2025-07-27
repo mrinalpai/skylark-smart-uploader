@@ -1763,6 +1763,25 @@ def upload_file():
                 
                 print(f"✅ File uploaded to Google Drive: {file_id} in folder: {recommended_folder_path}")
                 
+            except PermissionError as pe:
+                print(f"❌ Permission error: {pe}")
+                # Return a specific error response for permission issues
+                return jsonify({
+                    "status": "error",
+                    "message": str(pe),
+                    "error_type": "permission_denied",
+                    "suggested_action": "Contact your administrator to request access to the Marketing Hub folder"
+                }), 403
+                
+            except FileNotFoundError as fe:
+                print(f"❌ File not found error: {fe}")
+                return jsonify({
+                    "status": "error", 
+                    "message": str(fe),
+                    "error_type": "folder_not_found",
+                    "suggested_action": "Contact your administrator - the Marketing Hub folder may have been moved"
+                }), 404
+                
             except Exception as e:
                 print(f"❌ Drive upload failed: {e}")
                 file_id = None
@@ -1887,6 +1906,7 @@ def upload_to_drive(drive_service, file, filename, parent_folder_id):
         
         # Create media upload
         from googleapiclient.http import MediaIoBaseUpload
+        from googleapiclient.errors import HttpError
         import io
         
         # Read file content
@@ -1909,6 +1929,25 @@ def upload_to_drive(drive_service, file, filename, parent_folder_id):
         
         return uploaded_file.get('id')
         
+    except HttpError as e:
+        error_details = e.error_details[0] if e.error_details else {}
+        error_reason = error_details.get('reason', 'unknown')
+        
+        print(f"❌ Drive HTTP error: {e}")
+        print(f"   - Status: {e.resp.status}")
+        print(f"   - Reason: {error_reason}")
+        
+        # Handle specific permission errors
+        if e.resp.status == 403:
+            if 'insufficientFilePermissions' in str(e) or 'forbidden' in str(e).lower():
+                raise PermissionError("You don't have permission to upload files to the Marketing Hub folder. Please contact your administrator for access.")
+            else:
+                raise PermissionError("Access denied. You may not have the required permissions to upload files.")
+        elif e.resp.status == 404:
+            raise FileNotFoundError("The target folder was not found. The Marketing Hub folder may have been moved or deleted.")
+        else:
+            raise e
+            
     except Exception as e:
         print(f"❌ Drive upload error: {e}")
         raise e

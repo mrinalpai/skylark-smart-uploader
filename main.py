@@ -870,11 +870,10 @@ HTML_TEMPLATE = """
         <div class="footer">
             <div class="footer-links">
                 <a href="https://docs.google.com/document/d/{{ naming_convention_doc_id }}/edit" target="_blank" class="footer-link">Naming Convention</a>
-                <a href="mailto:support@skylarkdrones.com" class="footer-link">Help & Support</a>
-                <a href="https://skylarkdrones.com/privacy" class="footer-link">Privacy Policy</a>
+                <a href="mailto:mrinalpai@skylarkdrones.com" class="footer-link">Help & Support</a>
             </div>
             <div class="footer-text">
-                Powered by <span class="gemini-badge">Google Gemini Pro</span> • Skylark Drones © 2024
+                Powered by <span class="gemini-badge">Google Gemini Pro</span> • Skylark Drones © 2025
             </div>
         </div>
     </div>

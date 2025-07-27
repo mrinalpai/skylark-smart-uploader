@@ -885,7 +885,8 @@ class IntelligentWorkflowOrchestrator:
             print(f"❌ Duplicate check error: {e}")
             print(f"   Error type: {type(e).__name__}")
             print(f"   Filename: {filename}")
-            print(f"   Query attempted: name='{filename.replace("'", "\\'")}'")
+            escaped_for_log = filename.replace("'", "\\'")
+            print(f"   Query attempted: name='{escaped_for_log}'")
             # Return None instead of raising exception to allow workflow to continue
             return None
 

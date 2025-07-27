@@ -674,11 +674,15 @@ class IntelligentWorkflowOrchestrator:
             
             # Check for duplicate files first
             self._update_progress(1, 5, "🔍 Checking for duplicate files...")
-            duplicate = self.drive_service.check_file_exists(filename, file_size, marketing_hub_folder_id)
-            
-            if duplicate:
-                print(f"⚠️ Duplicate file detected: {duplicate['name']}")
-                return self._create_duplicate_result(filename, duplicate)
+            try:
+                duplicate = self.drive_service.check_file_exists(filename, file_size, marketing_hub_folder_id)
+                
+                if duplicate:
+                    print(f"⚠️ Duplicate file detected: {duplicate['name']}")
+                    return self._create_duplicate_result(filename, duplicate)
+            except Exception as duplicate_error:
+                print(f"⚠️ Duplicate check failed, continuing with analysis: {duplicate_error}")
+                # Continue with normal workflow if duplicate check fails
             
             # Get naming convention rules
             naming_rules = self.naming_service.get_naming_rules()
@@ -834,10 +838,15 @@ class IntelligentWorkflowOrchestrator:
         try:
             print(f"🔍 Checking for duplicate files: {filename} ({file_size} bytes)")
             
+            # Escape single quotes in filename for query
+            escaped_filename = filename.replace("'", "\\'")
+            
             # Search for files with the same name
-            query = f"name='{filename}'"
+            query = f"name='{escaped_filename}'"
             if folder_id:
                 query += f" and parents in '{folder_id}'"
+            
+            print(f"🔍 Drive API query: {query}")
             
             results = self.service.files().list(
                 q=query,
@@ -846,6 +855,7 @@ class IntelligentWorkflowOrchestrator:
             ).execute()
             
             files = results.get('files', [])
+            print(f"🔍 Found {len(files)} files with similar names")
             
             if not files:
                 print(f"✅ No duplicate found for: {filename}")
@@ -873,6 +883,10 @@ class IntelligentWorkflowOrchestrator:
             
         except Exception as e:
             print(f"❌ Duplicate check error: {e}")
+            print(f"   Error type: {type(e).__name__}")
+            print(f"   Filename: {filename}")
+            print(f"   Query attempted: name='{filename.replace("'", "\\'")}'")
+            # Return None instead of raising exception to allow workflow to continue
             return None
 
 

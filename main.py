@@ -417,11 +417,13 @@ HTML_TEMPLATE = """
         .file-item {
             background: linear-gradient(135deg, #f8fafc, #f1f5f9);
             border-radius: 16px;
-            padding: 32px;
+            padding: 24px;
             margin-bottom: 24px;
-            border-left: 6px solid var(--skylark-orange);
+            border-left: 4px solid var(--skylark-orange);
             box-shadow: 0 4px 16px rgba(0,0,0,0.05);
             transition: all 0.3s ease;
+            max-width: 100%;
+            position: relative;
         }
         
         .file-item:hover {
@@ -503,11 +505,13 @@ HTML_TEMPLATE = """
         
          .ai-summary {
             background: rgba(255, 255, 255, 0.95);
-            border-radius: 16px;
-            padding: 24px;
-            margin: 20px 0;
-            border-left: 4px solid var(--skylark-blue);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 16px 0;
+            border-left: 3px solid var(--skylark-blue);
             backdrop-filter: blur(10px);
+            max-width: 100%;
+            box-sizing: border-box;
         }
         
         .ai-label {
@@ -662,9 +666,11 @@ HTML_TEMPLATE = """
         .folder-destination {
             background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(5, 150, 105, 0.05));
             border-radius: 12px;
-            padding: 24px;
-            margin: 24px 0;
+            padding: 20px;
+            margin: 16px 0;
             border: 1px solid rgba(16, 185, 129, 0.1);
+            max-width: 100%;
+            box-sizing: border-box;
         }
         
         .destination-label {

@@ -1265,24 +1265,40 @@ HTML_TEMPLATE = """
             const fileObj = uploadedFiles.find(f => f.id === fileId);
             if (!fileObj) return;
             
-            // Update status
+            // Immediate visual feedback - hide buttons and show uploading state
+            const actionButtons = document.getElementById(`action-buttons-${fileId}`);
+            if (actionButtons) {
+                actionButtons.style.display = 'none';
+            }
+            
+            // Update status immediately
             const statusElement = document.querySelector(`#file-${fileId} .file-status`);
             statusElement.className = 'file-status status-uploading';
-            statusElement.textContent = 'Uploading';
+            statusElement.textContent = 'Uploading...';
             
-            // Show progress bar
+            // Show progress bar immediately
             const progressBar = document.getElementById(`progress-${fileId}`);
-            progressBar.style.display = 'block';
+            if (progressBar) {
+                progressBar.style.display = 'block';
+                progressBar.innerHTML = `
+                    <div style="background: #e5e7eb; height: 4px; border-radius: 2px; overflow: hidden;">
+                        <div class="upload-progress-fill" style="background: var(--skylark-orange); height: 100%; width: 0%; transition: width 0.3s ease;"></div>
+                    </div>
+                    <div style="font-size: 11px; color: var(--skylark-gray); margin-top: 4px;">Uploading to Marketing Hub...</div>
+                `;
+            }
             
             // Simulate upload progress
             let progress = 0;
             const progressInterval = setInterval(() => {
-                progress += Math.random() * 20;
-                if (progress > 90) progress = 90;
+                progress += Math.random() * 15;
+                if (progress > 85) progress = 85;
                 
-                const progressFill = progressBar.querySelector('.progress-fill');
-                progressFill.style.width = progress + '%';
-            }, 200);
+                const progressFill = progressBar.querySelector('.upload-progress-fill');
+                if (progressFill) {
+                    progressFill.style.width = progress + '%';
+                }
+            }, 300);
             
             try {
                 // Upload API call
@@ -1312,20 +1328,24 @@ HTML_TEMPLATE = """
                 
                 // Complete progress
                 clearInterval(progressInterval);
-                const progressFill = progressBar.querySelector('.progress-fill');
-                progressFill.style.width = '100%';
+                const progressFill = progressBar.querySelector('.upload-progress-fill');
+                if (progressFill) {
+                    progressFill.style.width = '100%';
+                }
                 
                 // Update status
                 statusElement.className = 'file-status status-completed';
                 statusElement.textContent = 'Uploaded Successfully';
                 
-                // Show upload success message with file link
+                // Show upload success message with file link and folder path
                 const destinationSection = document.querySelector(`#file-${fileId} .destination-section`);
                 if (destinationSection && result.file_link) {
+                    const folderPath = result.folder_path || 'Marketing Hub';
                     destinationSection.innerHTML = `
                         <div class="destination-header">✅ Upload Complete</div>
                         <div class="destination-content">
-                            <div style="margin-bottom: 8px;">File uploaded successfully to Marketing Hub</div>
+                            <div style="margin-bottom: 8px; font-weight: 600;">📁 Uploaded to: ${folderPath}</div>
+                            <div style="margin-bottom: 8px; font-size: 12px; color: var(--skylark-gray);">Final filename: ${result.final_name || result.original_name}</div>
                             <a href="${result.file_link}" target="_blank" style="color: var(--skylark-blue); text-decoration: none; font-weight: 600;">
                                 🔗 View File in Drive
                             </a>
@@ -1347,13 +1367,28 @@ HTML_TEMPLATE = """
                 
             } catch (error) {
                 console.error('Upload error:', error);
+                
+                // Stop progress animation
                 clearInterval(progressInterval);
                 
+                // Update status to error
                 statusElement.className = 'file-status status-error';
                 statusElement.textContent = 'Upload Failed';
                 
-                // Hide progress bar on error
-                progressBar.style.display = 'none';
+                // Hide progress bar and show error message
+                if (progressBar) {
+                    progressBar.innerHTML = `
+                        <div style="color: var(--error-red); font-size: 12px; margin-top: 8px;">
+                            ❌ Upload failed: ${error.message}
+                        </div>
+                    `;
+                }
+                
+                // Restore action buttons so user can try again
+                const actionButtons = document.getElementById(`action-buttons-${fileId}`);
+                if (actionButtons) {
+                    actionButtons.style.display = 'flex';
+                }
                 
                 alert(`Upload failed: ${error.message}`);
             }

@@ -1261,7 +1261,7 @@ HTML_TEMPLATE = """
             }, 200);
             
             try {
-                // Simulate upload API call
+                // Upload API call
                 const formData = new FormData();
                 formData.append('file', fileObj.file);
                 formData.append('analysis', JSON.stringify(fileObj.analysis));
@@ -1270,6 +1270,14 @@ HTML_TEMPLATE = """
                     method: 'POST',
                     body: formData
                 });
+                
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const htmlText = await response.text();
+                    console.error('Non-JSON response:', htmlText);
+                    throw new Error('Server returned HTML instead of JSON. Please check authentication.');
+                }
                 
                 const result = await response.json();
                 
@@ -1318,7 +1326,10 @@ HTML_TEMPLATE = """
                 clearInterval(progressInterval);
                 
                 statusElement.className = 'file-status status-error';
-                statusElement.textContent = 'Error';
+                statusElement.textContent = 'Upload Failed';
+                
+                // Hide progress bar on error
+                progressBar.style.display = 'none';
                 
                 alert(`Upload failed: ${error.message}`);
             }
@@ -1587,20 +1598,23 @@ def gemini_analyze():
 @app.route('/api/upload/upload', methods=['POST'])
 def upload_file():
     """Enhanced file upload with real Google Drive integration"""
-    user_info = session.get('user_info')
-    if not user_info:
-        return jsonify({"error": "Not authenticated"}), 401
-    
     try:
+        user_info = session.get('user_info')
+        if not user_info:
+            return jsonify({"status": "error", "message": "Not authenticated"}), 401
+        
         # Get uploaded file and analysis data
         file = request.files.get('file')
         analysis_data = request.form.get('analysis')
         
         if not file:
-            return jsonify({"error": "No file provided"}), 400
+            return jsonify({"status": "error", "message": "No file provided"}), 400
         
-        # Parse analysis data
-        analysis = json.loads(analysis_data) if analysis_data else {}
+        # Parse analysis data safely
+        try:
+            analysis = json.loads(analysis_data) if analysis_data else {}
+        except json.JSONDecodeError as e:
+            return jsonify({"status": "error", "message": f"Invalid analysis data: {str(e)}"}), 400
         
         # Calculate file size BEFORE processing
         file.seek(0, 2)  # Seek to end
@@ -1674,6 +1688,7 @@ def upload_file():
                 "status": "success",
                 "message": "File uploaded successfully to Marketing Hub",
                 "file_id": file_id,
+                "file_link": f"https://drive.google.com/file/d/{file_id}/view",
                 "original_name": file.filename,
                 "final_name": suggested_filename,
                 "folder_path": folder_path,
@@ -1692,6 +1707,7 @@ def upload_file():
                 "status": "success",
                 "message": "File processed successfully (Drive upload unavailable)",
                 "file_id": fallback_file_id,
+                "file_link": f"https://drive.google.com/file/d/{fallback_file_id}/view",
                 "original_name": file.filename,
                 "final_name": suggested_filename,
                 "folder_path": folder_path,
@@ -1708,7 +1724,9 @@ def upload_file():
         return jsonify(upload_response)
         
     except Exception as e:
-        print(f"Upload error: {e}")
+        print(f"❌ Upload error: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
             "status": "error",
             "message": f"Upload failed: {str(e)}"

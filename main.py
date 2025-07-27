@@ -1340,7 +1340,13 @@ HTML_TEMPLATE = """
                 // Show upload success message with file link and folder path
                 const destinationSection = document.querySelector(`#file-${fileId} .destination-section`);
                 if (destinationSection && result.file_link) {
+                    // Debug: Log the result to see what we're getting
+                    console.log('Upload result:', result);
+                    console.log('Folder path from result:', result.folder_path);
+                    
                     const folderPath = result.folder_path || 'Marketing Hub';
+                    console.log('Final folder path to display:', folderPath);
+                    
                     destinationSection.innerHTML = `
                         <div class="destination-header">✅ Upload Complete</div>
                         <div class="destination-content">
@@ -1764,6 +1770,7 @@ def upload_file():
         # Generate response
         if file_id:
             # Real Google Drive upload successful
+            print(f"🔍 DEBUG: Generating success response with folder_path: {folder_path}")
             upload_response = {
                 "status": "success",
                 "message": "File uploaded successfully to Marketing Hub",
@@ -1789,6 +1796,8 @@ def upload_file():
             if analysis and 'folder_data' in analysis:
                 folder_path = analysis['folder_data'].get('recommended_folder', folder_path)
             
+            print(f"🔍 DEBUG: Generating fallback response with folder_path: {folder_path}")
+            
             upload_response = {
                 "status": "success",
                 "message": "File analyzed successfully - Drive upload requires re-authentication",
@@ -1807,6 +1816,7 @@ def upload_file():
                 "note": "Drive upload requires authentication"
             }
         
+        print(f"🔍 DEBUG: Final upload response: {upload_response}")
         return jsonify(upload_response)
         
     except Exception as e:

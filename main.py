@@ -1133,7 +1133,6 @@ HTML_TEMPLATE = """
                 statusElement.textContent = 'Uploaded Successfully';
                 
                 // Update file object
-                const fileObj = uploadedFiles.find(f => f.id === fileId);
                 if (fileObj) {
                     fileObj.status = 'completed';
                     fileObj.uploadResult = result;

@@ -624,18 +624,23 @@ HTML_TEMPLATE = """
             height: 100%;
             background: conic-gradient(var(--skylark-orange) 0deg, var(--skylark-orange) var(--progress, 0deg), transparent var(--progress, 0deg));
             border-radius: 50%;
-            animation: pulse 2s ease-in-out infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
         }
         
         .step-text {
             font-weight: 500;
-        }        padding-top: 16px;
-            border-top: 1px solid rgba(102, 126, 234, 0.1);
+        }
+        
+        .ai-metrics {
+            display: flex;
+            gap: 16px;
+            margin-top: 12px;
+        }
+        
+        .ai-metric {
+            background: rgba(255,255,255,0.8);
+            padding: 12px;
+            border-radius: 8px;
+            text-align: center;
         }
         
         .ai-metrics {

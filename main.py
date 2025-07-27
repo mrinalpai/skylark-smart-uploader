@@ -426,7 +426,6 @@ HTML_TEMPLATE = """
             transition: all 0.3s ease;
             max-width: 100%;
             position: relative;
-            overflow: hidden;
             width: 100%;
             box-sizing: border-box;
         }
@@ -452,14 +451,14 @@ HTML_TEMPLATE = """
         .file-icon {
             width: 48px;
             height: 48px;
-            background: #6366f1;
+            background: linear-gradient(135deg, var(--skylark-orange), var(--skylark-orange-light));
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-size: 20px;
-            box-shadow: 0 4px 16px rgba(99,102,241,0.3);
+            box-shadow: 0 4px 16px rgba(255,107,53,0.3);
         }
         
         .file-details h4 {
@@ -527,7 +526,11 @@ HTML_TEMPLATE = """
             border-left: 2px solid var(--skylark-blue);
             font-size: 13px;
             max-width: 100%;
+            width: 100%;
             box-sizing: border-box;
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
         }
         
         .analysis-header {
@@ -560,7 +563,11 @@ HTML_TEMPLATE = """
             border-left: 2px solid var(--success-green);
             font-size: 13px;
             max-width: 100%;
+            width: 100%;
             box-sizing: border-box;
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
         }
         
         .destination-header {
@@ -622,8 +629,9 @@ HTML_TEMPLATE = """
             left: 0;
             width: 100%;
             height: 100%;
-            background: #e5e7eb;
+            background: transparent;
             border-radius: 50%;
+            display: none;
         }
         
         .step-text {
@@ -793,14 +801,14 @@ HTML_TEMPLATE = """
         }
         
         .btn-primary {
-            background: #6366f1;
+            background: linear-gradient(135deg, var(--skylark-orange), var(--skylark-orange-light));
             color: white;
-            box-shadow: 0 4px 16px rgba(99,102,241,0.3);
+            box-shadow: 0 4px 16px rgba(255,107,53,0.3);
         }
         
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(99,102,241,0.4);
+            box-shadow: 0 8px 24px rgba(255,107,53,0.4);
         }
         
         .btn-secondary {
@@ -828,18 +836,20 @@ HTML_TEMPLATE = """
         
         .progress-bar {
             width: 100%;
-            height: 8px;
-            background: rgba(100, 116, 139, 0.1);
-            border-radius: 4px;
+            height: 3px;
+            background: #f3f4f6;
+            border-radius: 2px;
             overflow: hidden;
-            margin-top: 16px;
+            margin-top: 8px;
+            display: none;
         }
         
         .progress-fill {
             height: 100%;
-            background: #6366f1;
-            border-radius: 4px;
+            background: linear-gradient(90deg, var(--skylark-orange), var(--skylark-orange-light));
+            border-radius: 2px;
             transition: width 0.3s ease;
+            width: 0%;
         }
         
         .footer {
@@ -1255,24 +1265,40 @@ HTML_TEMPLATE = """
             const fileObj = uploadedFiles.find(f => f.id === fileId);
             if (!fileObj) return;
             
-            // Update status
+            // Immediate visual feedback - hide buttons and show uploading state
+            const actionButtons = document.getElementById(`action-buttons-${fileId}`);
+            if (actionButtons) {
+                actionButtons.style.display = 'none';
+            }
+            
+            // Update status immediately
             const statusElement = document.querySelector(`#file-${fileId} .file-status`);
             statusElement.className = 'file-status status-uploading';
-            statusElement.textContent = 'Uploading';
+            statusElement.textContent = 'Uploading...';
             
-            // Show progress bar
+            // Show progress bar immediately
             const progressBar = document.getElementById(`progress-${fileId}`);
-            progressBar.style.display = 'block';
+            if (progressBar) {
+                progressBar.style.display = 'block';
+                progressBar.innerHTML = `
+                    <div style="background: #e5e7eb; height: 4px; border-radius: 2px; overflow: hidden;">
+                        <div class="upload-progress-fill" style="background: var(--skylark-orange); height: 100%; width: 0%; transition: width 0.3s ease;"></div>
+                    </div>
+                    <div style="font-size: 11px; color: var(--skylark-gray); margin-top: 4px;">Uploading to Marketing Hub...</div>
+                `;
+            }
             
             // Simulate upload progress
             let progress = 0;
             const progressInterval = setInterval(() => {
-                progress += Math.random() * 20;
-                if (progress > 90) progress = 90;
+                progress += Math.random() * 15;
+                if (progress > 85) progress = 85;
                 
-                const progressFill = progressBar.querySelector('.progress-fill');
-                progressFill.style.width = progress + '%';
-            }, 200);
+                const progressFill = progressBar.querySelector('.upload-progress-fill');
+                if (progressFill) {
+                    progressFill.style.width = progress + '%';
+                }
+            }, 300);
             
             try {
                 // Upload API call
@@ -1302,16 +1328,25 @@ HTML_TEMPLATE = """
                 
                 // Complete progress
                 clearInterval(progressInterval);
-                const progressFill = progressBar.querySelector('.progress-fill');
-                progressFill.style.width = '100%';
+                const progressFill = progressBar.querySelector('.upload-progress-fill');
+                if (progressFill) {
+                    progressFill.style.width = '100%';
+                }
                 
                 // Update status
                 statusElement.className = 'file-status status-completed';
                 statusElement.textContent = 'Uploaded Successfully';
                 
-                // Show upload success message with file link
+                // Show upload success message with file link and folder path
                 const destinationSection = document.querySelector(`#file-${fileId} .destination-section`);
                 if (destinationSection && result.file_link) {
+                    // Debug: Log the result to see what we're getting
+                    console.log('Upload result:', result);
+                    console.log('Folder path from result:', result.folder_path);
+                    
+                    const folderPath = result.folder_path || 'Marketing Hub';
+                    console.log('Final folder path to display:', folderPath);
+                    
                     destinationSection.innerHTML = `
                         <div class="destination-header">✅ Upload Complete</div>
                         <div class="destination-content">
@@ -1338,13 +1373,28 @@ HTML_TEMPLATE = """
                 
             } catch (error) {
                 console.error('Upload error:', error);
+                
+                // Stop progress animation
                 clearInterval(progressInterval);
                 
+                // Update status to error
                 statusElement.className = 'file-status status-error';
                 statusElement.textContent = 'Upload Failed';
                 
-                // Hide progress bar on error
-                progressBar.style.display = 'none';
+                // Hide progress bar and show error message
+                if (progressBar) {
+                    progressBar.innerHTML = `
+                        <div style="color: var(--error-red); font-size: 12px; margin-top: 8px;">
+                            ❌ Upload failed: ${error.message}
+                        </div>
+                    `;
+                }
+                
+                // Restore action buttons so user can try again
+                const actionButtons = document.getElementById(`action-buttons-${fileId}`);
+                if (actionButtons) {
+                    actionButtons.style.display = 'flex';
+                }
                 
                 alert(`Upload failed: ${error.message}`);
             }
@@ -1614,9 +1664,23 @@ def gemini_analyze():
 def upload_file():
     """Enhanced file upload with real Google Drive integration"""
     try:
+        # Comprehensive authentication check with debugging
+        access_token = session.get('access_token')
         user_info = session.get('user_info')
-        if not user_info:
-            return jsonify({"status": "error", "message": "Not authenticated"}), 401
+        
+        print(f"🔍 Upload Authentication Debug:")
+        print(f"   - access_token present: {bool(access_token)}")
+        print(f"   - user_info present: {bool(user_info)}")
+        print(f"   - session keys: {list(session.keys())}")
+        
+        # More flexible authentication check
+        if not access_token and not user_info:
+            print("❌ No authentication found - returning 401")
+            return jsonify({"status": "error", "message": "Not authenticated - please log in again"}), 401
+        
+        # If we have user_info but no access_token, try to proceed with limited functionality
+        if not access_token and user_info:
+            print("⚠️ User authenticated but no access token - proceeding with fallback mode")
         
         # Get uploaded file and analysis data
         file = request.files.get('file')
@@ -1636,7 +1700,7 @@ def upload_file():
         file_size = file.tell()
         file.seek(0)  # Reset to beginning
         
-        # Initialize services with user credentials
+        # Initialize services with user credentials (with fallback)
         access_token = session.get('access_token')
         refresh_token = session.get('refresh_token')
         credentials = None
@@ -1651,9 +1715,14 @@ def upload_file():
                     client_secret=GOOGLE_CLIENT_SECRET,
                     scopes=['https://www.googleapis.com/auth/drive']
                 )
+                print("✅ Credentials created successfully for upload")
             except Exception as e:
                 print(f"❌ Error creating credentials for upload: {e}")
+                credentials = None
+        else:
+            print("⚠️ No access token available - proceeding without Drive credentials")
         
+        # Initialize services (they should handle None credentials gracefully)
         drive_service = DriveService(credentials)
         naming_service = NamingConventionService(drive_service, NAMING_CONVENTION_DOC_ID)
         
@@ -1663,11 +1732,13 @@ def upload_file():
             analysis.get('analysis_data', {})
         )
         
-        # Try to upload to Google Drive
+        # Try to upload to Google Drive (with comprehensive fallback)
         file_id = None
         folder_path = "Marketing Hub → General → Uploads"  # Default fallback
         
-        if drive_service.is_available():
+        print(f"🔍 Drive service available: {drive_service.is_available() if drive_service else False}")
+        
+        if drive_service and drive_service.is_available():
             try:
                 # Debug: Print the analysis data to see what we're getting
                 print(f"🔍 DEBUG: Full analysis data: {analysis}")
@@ -1708,6 +1779,25 @@ def upload_file():
                 
                 print(f"✅ File uploaded to Google Drive: {file_id} in folder: {folder_path}")
                 
+            except PermissionError as pe:
+                print(f"❌ Permission error: {pe}")
+                # Return a specific error response for permission issues
+                return jsonify({
+                    "status": "error",
+                    "message": str(pe),
+                    "error_type": "permission_denied",
+                    "suggested_action": "Contact your administrator to request access to the Marketing Hub folder"
+                }), 403
+                
+            except FileNotFoundError as fe:
+                print(f"❌ File not found error: {fe}")
+                return jsonify({
+                    "status": "error", 
+                    "message": str(fe),
+                    "error_type": "folder_not_found",
+                    "suggested_action": "Contact your administrator - the Marketing Hub folder may have been moved"
+                }), 404
+                
             except Exception as e:
                 print(f"❌ Drive upload failed: {e}")
                 file_id = None
@@ -1715,6 +1805,7 @@ def upload_file():
         # Generate response
         if file_id:
             # Real Google Drive upload successful
+            print(f"🔍 DEBUG: Generating success response with folder_path: {folder_path}")
             upload_response = {
                 "status": "success",
                 "message": "File uploaded successfully to Marketing Hub",
@@ -1732,26 +1823,35 @@ def upload_file():
                 "naming_convention_applied": True
             }
         else:
-            # Fallback response (file not actually uploaded)
+            # Fallback response (file not actually uploaded but processed)
+            print("⚠️ Drive service not available - generating fallback response")
             fallback_file_id = f"1SKY{datetime.now().strftime('%Y%m%d%H%M%S')}{secrets.token_hex(4)}"
+            
+            # Get folder path from analysis if available
+            if analysis and 'folder_data' in analysis:
+                folder_path = analysis['folder_data'].get('recommended_folder', folder_path)
+            
+            print(f"🔍 DEBUG: Generating fallback response with folder_path: {folder_path}")
+            
             upload_response = {
                 "status": "success",
-                "message": "File processed successfully (Drive upload unavailable)",
+                "message": "File analyzed successfully - Drive upload requires re-authentication",
                 "file_id": fallback_file_id,
-                "file_link": f"https://drive.google.com/file/d/{fallback_file_id}/view",
+                "file_link": "https://drive.google.com/drive/folders/" + MARKETING_HUB_FOLDER_ID,  # Link to Marketing Hub
                 "original_name": file.filename,
                 "final_name": suggested_filename,
                 "folder_path": folder_path,
                 "upload_time": datetime.now().isoformat(),
-                "file_url": f"https://drive.google.com/file/d/{fallback_file_id}/view",
+                "file_url": "https://drive.google.com/drive/folders/" + MARKETING_HUB_FOLDER_ID,
                 "ai_engine": "Google Gemini 2.5 Pro (Analysis Only)",
                 "file_size": file_size,
                 "content_type": file.content_type,
-                "analysis_confidence": "85%",
+                "analysis_confidence": analysis.get('folder_data', {}).get('confidence', '85') + '%' if analysis else "85%",
                 "naming_convention_applied": True,
                 "note": "Drive upload requires authentication"
             }
         
+        print(f"🔍 DEBUG: Final upload response: {upload_response}")
         return jsonify(upload_response)
         
     except Exception as e:
@@ -1822,6 +1922,7 @@ def upload_to_drive(drive_service, file, filename, parent_folder_id):
         
         # Create media upload
         from googleapiclient.http import MediaIoBaseUpload
+        from googleapiclient.errors import HttpError
         import io
         
         # Read file content
@@ -1844,6 +1945,25 @@ def upload_to_drive(drive_service, file, filename, parent_folder_id):
         
         return uploaded_file.get('id')
         
+    except HttpError as e:
+        error_details = e.error_details[0] if e.error_details else {}
+        error_reason = error_details.get('reason', 'unknown')
+        
+        print(f"❌ Drive HTTP error: {e}")
+        print(f"   - Status: {e.resp.status}")
+        print(f"   - Reason: {error_reason}")
+        
+        # Handle specific permission errors
+        if e.resp.status == 403:
+            if 'insufficientFilePermissions' in str(e) or 'forbidden' in str(e).lower():
+                raise PermissionError("You don't have permission to upload files to the Marketing Hub folder. Please contact your administrator for access.")
+            else:
+                raise PermissionError("Access denied. You may not have the required permissions to upload files.")
+        elif e.resp.status == 404:
+            raise FileNotFoundError("The target folder was not found. The Marketing Hub folder may have been moved or deleted.")
+        else:
+            raise e
+            
     except Exception as e:
         print(f"❌ Drive upload error: {e}")
         raise e

@@ -1485,8 +1485,33 @@ def get_redirect_uri():
     else:
         return f"https://{request.host}/api/auth/callback"
 
+@app.route('/health')
+def health_check():
+    """Health check endpoint for debugging"""
+    try:
+        return jsonify({
+            "status": "healthy",
+            "timestamp": datetime.now().isoformat(),
+            "python_version": os.sys.version,
+            "flask_working": True,
+            "imports_working": True,
+            "gemini_service_available": gemini_service is not None,
+            "environment": {
+                "has_google_client_id": bool(GOOGLE_CLIENT_ID),
+                "has_google_client_secret": bool(GOOGLE_CLIENT_SECRET),
+                "has_gemini_api_key": bool(GEMINI_API_KEY),
+                "has_marketing_hub_folder_id": bool(MARKETING_HUB_FOLDER_ID)
+            }
+        })
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "error": str(e),
+            "timestamp": datetime.now().isoformat()
+        }), 500
+
 @app.route('/')
-def index():
+def home():
     user_info = session.get('user_info')
     return render_template_string(HTML_TEMPLATE, 
                                 user_info=user_info,

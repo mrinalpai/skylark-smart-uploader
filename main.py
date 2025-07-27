@@ -452,14 +452,14 @@ HTML_TEMPLATE = """
         .file-icon {
             width: 48px;
             height: 48px;
-            background: #6366f1;
+            background: linear-gradient(135deg, var(--skylark-orange), var(--skylark-orange-light));
             border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-size: 20px;
-            box-shadow: 0 4px 16px rgba(99,102,241,0.3);
+            box-shadow: 0 4px 16px rgba(255,107,53,0.3);
         }
         
         .file-details h4 {
@@ -622,7 +622,7 @@ HTML_TEMPLATE = """
             left: 0;
             width: 100%;
             height: 100%;
-            background: #e5e7eb;
+            background: conic-gradient(var(--skylark-orange) 0deg, var(--skylark-orange) var(--progress, 0deg), transparent var(--progress, 0deg));
             border-radius: 50%;
         }
         
@@ -793,14 +793,14 @@ HTML_TEMPLATE = """
         }
         
         .btn-primary {
-            background: #6366f1;
+            background: linear-gradient(135deg, var(--skylark-orange), var(--skylark-orange-light));
             color: white;
-            box-shadow: 0 4px 16px rgba(99,102,241,0.3);
+            box-shadow: 0 4px 16px rgba(255,107,53,0.3);
         }
         
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(99,102,241,0.4);
+            box-shadow: 0 8px 24px rgba(255,107,53,0.4);
         }
         
         .btn-secondary {
@@ -837,7 +837,7 @@ HTML_TEMPLATE = """
         
         .progress-fill {
             height: 100%;
-            background: #6366f1;
+            background: linear-gradient(90deg, var(--skylark-orange), var(--skylark-orange-light));
             border-radius: 4px;
             transition: width 0.3s ease;
         }

@@ -426,11 +426,8 @@ HTML_TEMPLATE = """
             transition: all 0.3s ease;
             max-width: 100%;
             position: relative;
-            overflow: hidden;
             width: 100%;
             box-sizing: border-box;
-            max-height: 80vh;
-            overflow-y: auto;
         }
         
         .file-item:hover {
@@ -830,18 +827,20 @@ HTML_TEMPLATE = """
         
         .progress-bar {
             width: 100%;
-            height: 8px;
-            background: rgba(100, 116, 139, 0.1);
-            border-radius: 4px;
+            height: 3px;
+            background: #f3f4f6;
+            border-radius: 2px;
             overflow: hidden;
-            margin-top: 16px;
+            margin-top: 8px;
+            display: none;
         }
         
         .progress-fill {
             height: 100%;
             background: linear-gradient(90deg, var(--skylark-orange), var(--skylark-orange-light));
-            border-radius: 4px;
+            border-radius: 2px;
             transition: width 0.3s ease;
+            width: 0%;
         }
         
         .footer {
@@ -1615,8 +1614,9 @@ def gemini_analyze():
 def upload_file():
     """Enhanced file upload with real Google Drive integration"""
     try:
-        user_info = session.get('user_info')
-        if not user_info:
+        # Check authentication
+        access_token = session.get('access_token')
+        if not access_token:
             return jsonify({"status": "error", "message": "Not authenticated"}), 401
         
         # Get uploaded file and analysis data

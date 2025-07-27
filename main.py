@@ -429,6 +429,8 @@ HTML_TEMPLATE = """
             overflow: hidden;
             width: 100%;
             box-sizing: border-box;
+            max-height: 80vh;
+            overflow-y: auto;
         }
         
         .file-item:hover {

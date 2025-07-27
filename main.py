@@ -526,7 +526,11 @@ HTML_TEMPLATE = """
             border-left: 2px solid var(--skylark-blue);
             font-size: 13px;
             max-width: 100%;
+            width: 100%;
             box-sizing: border-box;
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
         }
         
         .analysis-header {
@@ -559,7 +563,11 @@ HTML_TEMPLATE = """
             border-left: 2px solid var(--success-green);
             font-size: 13px;
             max-width: 100%;
+            width: 100%;
             box-sizing: border-box;
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
         }
         
         .destination-header {
@@ -621,8 +629,9 @@ HTML_TEMPLATE = """
             left: 0;
             width: 100%;
             height: 100%;
-            background: conic-gradient(var(--skylark-orange) 0deg, var(--skylark-orange) var(--progress, 0deg), transparent var(--progress, 0deg));
+            background: transparent;
             border-radius: 50%;
+            display: none;
         }
         
         .step-text {

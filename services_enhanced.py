@@ -629,41 +629,64 @@ EXAMPLES:
 
 
 class IntelligentWorkflowOrchestrator:
-    """Orchestrates the 3-step intelligent workflow"""
+    """Orchestrates the 3-step intelligent workflow with progress tracking"""
     
     def __init__(self, gemini_service, drive_service, naming_service):
         self.gemini_service = gemini_service
         self.drive_service = drive_service
         self.naming_service = naming_service
+        self.progress_callback = None
+    
+    def set_progress_callback(self, callback):
+        """Set callback function for progress updates"""
+        self.progress_callback = callback
+    
+    def _update_progress(self, step, progress, message):
+        """Update progress with step, percentage, and message"""
+        if self.progress_callback:
+            self.progress_callback(step, progress, message)
+        print(f"📊 Step {step}: {progress}% - {message}")
     
     def execute_intelligent_workflow(self, filename, file_type, file_size, marketing_hub_folder_id):
-        """Execute the complete 3-step intelligent workflow"""
+        """Execute the complete 3-step intelligent workflow with progress tracking"""
         print(f"🚀 Starting 3-step intelligent workflow for: {filename}")
         
         try:
+            # Initialize progress
+            self._update_progress(1, 0, "Initializing content analysis...")
+            
             # Get naming convention rules
             naming_rules = self.naming_service.get_naming_rules()
+            self._update_progress(1, 10, "Loading naming convention rules...")
             
             # Step 1: Gemini analyzes file content
+            self._update_progress(1, 15, "Starting Gemini 2.5 Pro content analysis...")
             print("🧠 STEP 1: Gemini content analysis...")
             content_analysis = self.gemini_service.analyze_file_content(
                 filename, file_type, file_size, naming_rules
             )
+            self._update_progress(1, 33, "✅ Content analysis complete")
             
-            # Step 2: Drive API reads real folder structure (in parallel conceptually)
+            # Step 2: Drive API reads real folder structure
+            self._update_progress(2, 40, "📁 Reading Marketing Hub structure...")
             print("📁 STEP 2: Reading real folder structure...")
             folder_structure = self.drive_service.get_real_folder_structure(marketing_hub_folder_id)
+            self._update_progress(2, 66, "✅ Folder structure loaded")
             
             # Step 3: Gemini recommends folder based on analysis + real structure
+            self._update_progress(3, 75, "🎯 Generating intelligent recommendation...")
             print("🎯 STEP 3: Gemini intelligent folder recommendation...")
             folder_recommendation = self.gemini_service.recommend_folder_with_structure(
                 filename, content_analysis, folder_structure
             )
+            self._update_progress(3, 90, "✅ Recommendation complete")
             
             # Apply naming convention
+            self._update_progress(3, 95, "📝 Applying naming convention...")
             suggested_filename = self.naming_service.apply_naming_convention(filename, content_analysis)
             
             # Create comprehensive result
+            self._update_progress(3, 100, "✅ Analysis complete")
             result = self._create_comprehensive_result(
                 filename, content_analysis, folder_recommendation, suggested_filename
             )

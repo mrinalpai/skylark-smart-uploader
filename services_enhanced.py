@@ -721,10 +721,6 @@ class IntelligentWorkflowOrchestrator:
                                 <div class="ai-metric-label">Analysis</div>
                                 <div class="ai-metric-value">Gemini 2.5 Pro</div>
                             </div>
-                            <div class="ai-metric">
-                                <div class="ai-metric-label">Workflow</div>
-                                <div class="ai-metric-value">3-Step AI</div>
-                            </div>
                           </div>''',
             
             "destination": f'''<div class="destination-path">📁 {folder_recommendation.get('recommended_folder', 'Marketing Hub → General')}</div>

@@ -984,7 +984,7 @@ HTML_TEMPLATE = """
                     </div>
                 </div>
                 
-                <div class="action-buttons">
+                <div class="action-buttons" id="action-buttons-${fileId}" style="display: none;">
                     <button class="btn btn-primary" onclick="acceptAndUpload(${fileId})">
                         ✅ Accept & Upload to Marketing Hub
                     </button>
@@ -1071,6 +1071,12 @@ HTML_TEMPLATE = """
                 const statusElement = document.querySelector(`#file-${fileId} .file-status`);
                 statusElement.className = 'file-status status-ready';
                 statusElement.textContent = 'Ready';
+                
+                // Show action buttons after analysis is complete
+                const actionButtons = document.getElementById(`action-buttons-${fileId}`);
+                if (actionButtons) {
+                    actionButtons.style.display = 'block';
+                }
                 
                 // Update file object
                 const fileObj = uploadedFiles.find(f => f.id === fileId);

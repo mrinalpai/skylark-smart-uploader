@@ -33,11 +33,17 @@ class GeminiService:
     
     def is_available(self):
         """Check if Gemini API is available"""
-        return self.model is not None
+        available = self.model is not None
+        if available:
+            print("✅ Gemini API Available: True")
+        else:
+            print("❌ Gemini API Available: False - API key or model initialization failed")
+        return available
     
     def analyze_file_content(self, filename, file_type, file_size, naming_convention_rules=None):
         """Step 1: Analyze file content using Gemini AI"""
         if not self.is_available():
+            print("❌ Step 1: Gemini not available, using fallback content analysis")
             return self._fallback_content_analysis(filename, file_type, file_size)
         
         try:
@@ -48,6 +54,10 @@ class GeminiService:
             
             # Call Gemini API for content analysis
             response = self.model.generate_content(prompt)
+            
+            if not response or not response.text:
+                raise Exception("Empty response from Gemini API")
+            
             analysis_text = response.text
             
             # Parse and structure the response
@@ -58,11 +68,13 @@ class GeminiService:
             
         except Exception as e:
             print(f"❌ Step 1 Error: Gemini content analysis failed: {e}")
+            print(f"   Error details: {str(e)}")
             return self._fallback_content_analysis(filename, file_type, file_size)
     
     def recommend_folder_with_structure(self, filename, content_analysis, folder_structure):
         """Step 3: Use Gemini to recommend folder based on content analysis + real folder structure"""
         if not self.is_available():
+            print("❌ Step 3: Gemini not available, using fallback folder recommendation")
             return self._fallback_folder_recommendation(filename, content_analysis)
         
         try:
@@ -73,6 +85,10 @@ class GeminiService:
             
             # Call Gemini API for intelligent folder recommendation
             response = self.model.generate_content(prompt)
+            
+            if not response or not response.text:
+                raise Exception("Empty response from Gemini API")
+            
             recommendation_text = response.text
             
             # Parse the folder recommendation
@@ -83,6 +99,7 @@ class GeminiService:
             
         except Exception as e:
             print(f"❌ Step 3 Error: Gemini folder recommendation failed: {e}")
+            print(f"   Error details: {str(e)}")
             return self._fallback_folder_recommendation(filename, content_analysis)
     
     def _create_content_analysis_prompt(self, filename, file_type, file_size, naming_rules):

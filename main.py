@@ -1171,6 +1171,12 @@ HTML_TEMPLATE = """
                 const statusElement = document.querySelector(`#file-${fileId} .file-status`);
                 statusElement.className = 'file-status status-ready';
                 statusElement.textContent = 'Ready';
+                
+                // Show action buttons even on error (fallback mode)
+                const actionButtons = document.getElementById(`action-buttons-${fileId}`);
+                if (actionButtons) {
+                    actionButtons.style.display = 'block';
+                }
             }
         }
         

@@ -514,6 +514,59 @@ HTML_TEMPLATE = """
             box-sizing: border-box;
         }
         
+        .analysis-section {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 12px 0;
+            border-left: 3px solid var(--skylark-blue);
+            font-size: 14px;
+        }
+        
+        .analysis-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            color: var(--skylark-blue);
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        
+        .analysis-content {
+            color: var(--skylark-dark);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        
+        .analysis-details {
+            font-size: 12px;
+            color: var(--skylark-gray);
+        }
+        
+        .destination-section {
+            background: rgba(16, 185, 129, 0.05);
+            border-radius: 8px;
+            padding: 16px;
+            margin: 12px 0;
+            border-left: 3px solid var(--success-green);
+            font-size: 14px;
+        }
+        
+        .destination-header {
+            font-weight: 600;
+            color: var(--success-green);
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+        
+        .destination-content {
+            color: var(--skylark-dark);
+            line-height: 1.5;
+            font-size: 13px;
+        }
+        
         .ai-label {
             display: flex;
             align-items: center;
@@ -1028,28 +1081,25 @@ HTML_TEMPLATE = """
                     <div class="file-status status-analyzing">Analyzing</div>
                 </div>
                 
-                <div class="ai-summary">
-                <div class="ai-label">
-                    🧠 AI Analysis
-                    <span class="gemini-badge">Google Gemini Pro</span>
-                    <div class="step-indicator" id="step-indicator-${fileId}">
-                        <div class="progress-circle">
-                            <div class="progress-fill" style="--progress: 0deg;"></div>
+                <div class="analysis-section">
+                    <div class="analysis-header">
+                        🧠 AI Analysis <span class="gemini-badge">Gemini Pro</span>
+                        <div class="step-indicator" id="step-indicator-${fileId}">
+                            <div class="progress-circle">
+                                <div class="progress-fill" style="--progress: 0deg;"></div>
+                            </div>
+                            <span class="step-text">Step 1 of 3</span>
                         </div>
-                        <span class="step-text">Step 1 of 3</span>
                     </div>
-                </div>
-                    <div class="ai-content" id="analysis-${fileId}">
+                    <div class="analysis-content" id="analysis-${fileId}">
                         Analyzing file content and determining optimal organization...
                     </div>
-                    <div class="ai-details" id="details-${fileId}"></div>
+                    <div class="analysis-details" id="details-${fileId}"></div>
                 </div>
                 
-                <div class="folder-destination">
-                    <div class="destination-label">
-                        📁 Recommended Destination
-                    </div>
-                    <div id="destination-${fileId}">
+                <div class="destination-section">
+                    <div class="destination-header">📁 Recommended Destination</div>
+                    <div class="destination-content" id="destination-${fileId}">
                         Determining optimal folder location...
                     </div>
                 </div>
@@ -1236,6 +1286,26 @@ HTML_TEMPLATE = """
                 // Update status
                 statusElement.className = 'file-status status-completed';
                 statusElement.textContent = 'Uploaded Successfully';
+                
+                // Show upload success message with file link
+                const destinationSection = document.querySelector(`#file-${fileId} .destination-section`);
+                if (destinationSection && result.file_link) {
+                    destinationSection.innerHTML = `
+                        <div class="destination-header">✅ Upload Complete</div>
+                        <div class="destination-content">
+                            <div style="margin-bottom: 8px;">File uploaded successfully to Marketing Hub</div>
+                            <a href="${result.file_link}" target="_blank" style="color: var(--skylark-blue); text-decoration: none; font-weight: 600;">
+                                🔗 View File in Drive
+                            </a>
+                        </div>
+                    `;
+                }
+                
+                // Hide action buttons after successful upload
+                const actionButtons = document.getElementById(`action-buttons-${fileId}`);
+                if (actionButtons) {
+                    actionButtons.style.display = 'none';
+                }
                 
                 // Update file object
                 if (fileObj) {

@@ -1158,15 +1158,15 @@ HTML_TEMPLATE = """
                         ✅ Upload Successful!
                     </div>
                     <div style="font-size: 14px; color: #64748B; margin-bottom: 8px;">
-                        <strong>Final Name:</strong> ${result.final_name}
+                        <strong>Final Name:</strong> ${result.final_name || 'Processing...'}
                     </div>
                     <div style="font-size: 14px; color: #64748B; margin-bottom: 8px;">
-                        <strong>Location:</strong> ${result.folder_path}
+                        <strong>Location:</strong> ${result.folder_path || 'Marketing Hub'}
                     </div>
                     <div style="font-size: 14px; color: #64748B; margin-bottom: 12px;">
-                        <strong>File ID:</strong> ${result.file_id}
+                        <strong>File ID:</strong> ${result.file_id || 'Generating...'}
                     </div>
-                    <a href="${result.file_url}" target="_blank" 
+                    <a href="${result.file_url || '#'}" target="_blank" 
                        style="color: #2563EB; text-decoration: none; font-weight: 600; font-size: 14px;">
                         🔗 View in Google Drive
                     </a>

@@ -655,6 +655,14 @@ class IntelligentWorkflowOrchestrator:
             # Initialize progress
             self._update_progress(1, 0, "Initializing content analysis...")
             
+            # Check for duplicate files first
+            self._update_progress(1, 5, "🔍 Checking for duplicate files...")
+            duplicate = self.drive_service.check_file_exists(filename, file_size, marketing_hub_folder_id)
+            
+            if duplicate:
+                print(f"⚠️ Duplicate file detected: {duplicate['name']}")
+                return self._create_duplicate_result(filename, duplicate)
+            
             # Get naming convention rules
             naming_rules = self.naming_service.get_naming_rules()
             self._update_progress(1, 10, "Loading naming convention rules...")
@@ -765,6 +773,128 @@ class IntelligentWorkflowOrchestrator:
                 'content_category': 'GENERAL',
                 'product_line': 'MA',
                 'industry': 'General'
+            }
+        }
+
+
+    def check_file_exists(self, filename, file_size, folder_id=None):
+        """Check if a file with similar characteristics already exists"""
+        if not self.is_available():
+            print("❌ Drive API not available for duplicate check")
+            return None
+        
+        try:
+            print(f"🔍 Checking for duplicate files: {filename} ({file_size} bytes)")
+            
+            # Search for files with the same name
+            query = f"name='{filename}'"
+            if folder_id:
+                query += f" and parents in '{folder_id}'"
+            
+            results = self.service.files().list(
+                q=query,
+                fields="files(id,name,size,parents,createdTime,webViewLink)",
+                pageSize=10
+            ).execute()
+            
+            files = results.get('files', [])
+            
+            if not files:
+                print(f"✅ No duplicate found for: {filename}")
+                return None
+            
+            # Check for exact matches (same name and similar size)
+            for file in files:
+                existing_size = int(file.get('size', 0))
+                size_diff = abs(existing_size - file_size)
+                size_threshold = max(1024, file_size * 0.05)  # 5% or 1KB threshold
+                
+                if size_diff <= size_threshold:
+                    print(f"⚠️ Potential duplicate found: {file['name']} (ID: {file['id']})")
+                    return {
+                        'id': file['id'],
+                        'name': file['name'],
+                        'size': existing_size,
+                        'created_time': file.get('createdTime', ''),
+                        'web_link': file.get('webViewLink', ''),
+                        'size_difference': size_diff
+                    }
+            
+            print(f"✅ Similar named files found but different sizes for: {filename}")
+            return None
+            
+        except Exception as e:
+            print(f"❌ Duplicate check error: {e}")
+            return None
+
+
+    
+    def _create_duplicate_result(self, filename, duplicate_info):
+        """Create result for duplicate file detection"""
+        from datetime import datetime
+        
+        # Format the creation time
+        created_time = duplicate_info.get('created_time', '')
+        if created_time:
+            try:
+                # Parse ISO format and convert to readable format
+                dt = datetime.fromisoformat(created_time.replace('Z', '+00:00'))
+                formatted_time = dt.strftime('%B %d, %Y at %I:%M %p')
+            except:
+                formatted_time = 'Unknown'
+        else:
+            formatted_time = 'Unknown'
+        
+        size_mb = duplicate_info.get('size', 0) / (1024 * 1024)
+        
+        return {
+            "summary": f'''<div class="duplicate-warning">
+                            <div class="duplicate-icon">⚠️</div>
+                            <div class="duplicate-content">
+                                <h3>Duplicate File Detected</h3>
+                                <p>A file with the same name and similar size already exists in your Marketing Hub.</p>
+                            </div>
+                          </div>
+                          
+                          <div class="ai-metrics">
+                            <div class="ai-metric">
+                                <div class="ai-metric-label">Status</div>
+                                <div class="ai-metric-value">Duplicate</div>
+                            </div>
+                            <div class="ai-metric">
+                                <div class="ai-metric-label">Size</div>
+                                <div class="ai-metric-value">{size_mb:.1f} MB</div>
+                            </div>
+                            <div class="ai-metric">
+                                <div class="ai-metric-label">Created</div>
+                                <div class="ai-metric-value">{formatted_time}</div>
+                            </div>
+                          </div>''',
+            
+            "details": f'''<div class="duplicate-details">
+                            <strong>Existing File:</strong> {duplicate_info['name']}<br>
+                            <strong>File Size:</strong> {size_mb:.1f} MB<br>
+                            <strong>Created:</strong> {formatted_time}<br>
+                            <strong>Size Difference:</strong> {duplicate_info.get('size_difference', 0)} bytes
+                          </div>''',
+            
+            "destination": f'''<div class="duplicate-action">
+                                <div class="destination-path">📁 File Already Exists</div>
+                                <div class="folder-reasoning">💡 This file appears to be a duplicate of an existing file in your Marketing Hub</div>
+                                <div class="duplicate-link">
+                                    <a href="{duplicate_info.get('web_link', '#')}" target="_blank" class="view-existing-btn">
+                                        👁️ View Existing File
+                                    </a>
+                                </div>
+                              </div>''',
+            
+            # Store duplicate info for further processing
+            "is_duplicate": True,
+            "duplicate_info": duplicate_info,
+            "analysis_data": {
+                'content_category': 'DUPLICATE',
+                'product_line': 'DUP',
+                'industry': 'Duplicate'
             }
         }
 

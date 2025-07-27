@@ -496,6 +496,11 @@ HTML_TEMPLATE = """
             color: var(--success-green);
         }
         
+        .status-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--warning-yellow);
+        }
+        
          .ai-summary {
             background: rgba(255, 255, 255, 0.95);
             border-radius: 16px;
@@ -593,6 +598,65 @@ HTML_TEMPLATE = """
             font-size: 14px;
             font-weight: 700;
             color: var(--skylark-dark);
+        }
+        
+        /* Duplicate Warning Styles */
+        .duplicate-warning {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(217, 119, 6, 0.1));
+            border: 2px solid rgba(245, 158, 11, 0.3);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+        
+        .duplicate-icon {
+            font-size: 32px;
+            flex-shrink: 0;
+        }
+        
+        .duplicate-content h3 {
+            color: var(--warning-yellow);
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        
+        .duplicate-content p {
+            color: var(--skylark-gray);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        .duplicate-details {
+            background: rgba(245, 158, 11, 0.05);
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .duplicate-action {
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .view-existing-btn {
+            background: linear-gradient(135deg, var(--skylark-blue), var(--skylark-orange));
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            display: inline-block;
+            transition: all 0.2s ease;
+        }
+        
+        .view-existing-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
         }
         
         .folder-destination {
@@ -1067,21 +1131,33 @@ HTML_TEMPLATE = """
                 document.getElementById(`details-${fileId}`).innerHTML = result.details;
                 document.getElementById(`destination-${fileId}`).innerHTML = result.destination;
                 
-                // Update status
+                // Update status based on result type
                 const statusElement = document.querySelector(`#file-${fileId} .file-status`);
-                statusElement.className = 'file-status status-ready';
-                statusElement.textContent = 'Ready';
                 
-                // Show action buttons after analysis is complete
-                const actionButtons = document.getElementById(`action-buttons-${fileId}`);
-                if (actionButtons) {
-                    actionButtons.style.display = 'block';
+                if (result.is_duplicate) {
+                    statusElement.className = 'file-status status-warning';
+                    statusElement.textContent = 'Duplicate';
+                    
+                    // Don't show action buttons for duplicates
+                    const actionButtons = document.getElementById(`action-buttons-${fileId}`);
+                    if (actionButtons) {
+                        actionButtons.style.display = 'none';
+                    }
+                } else {
+                    statusElement.className = 'file-status status-ready';
+                    statusElement.textContent = 'Ready';
+                    
+                    // Show action buttons after analysis is complete
+                    const actionButtons = document.getElementById(`action-buttons-${fileId}`);
+                    if (actionButtons) {
+                        actionButtons.style.display = 'block';
+                    }
                 }
                 
                 // Update file object
                 const fileObj = uploadedFiles.find(f => f.id === fileId);
                 if (fileObj) {
-                    fileObj.status = 'ready';
+                    fileObj.status = result.is_duplicate ? 'duplicate' : 'ready';
                     fileObj.analysis = result;
                 }
                 

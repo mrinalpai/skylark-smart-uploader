@@ -1261,31 +1261,44 @@ def gemini_analyze():
             folder_structure=folder_structure
         )
         
-        # If we have analysis data, get intelligent folder recommendation
-        if 'analysis' in result or gemini_service.is_available():
-            # Extract analysis data from Gemini response
+        # Get analysis data from Gemini response
+        analysis_data = result.get('analysis_data', {})
+        
+        # If no analysis data, extract from summary (fallback)
+        if not analysis_data and gemini_service.is_available():
+            summary_text = result.get('summary', '')
             analysis_data = {}
-            if gemini_service.is_available():
-                # Try to parse analysis data from the summary
-                summary_text = result.get('summary', '')
-                if 'Category:' in summary_text:
-                    category_match = summary_text.split('Category:')[1].split('<br>')[0].strip()
-                    analysis_data['content_category'] = category_match
-                if 'Product Line:' in summary_text:
-                    product_match = summary_text.split('Product Line:')[1].split('<br>')[0].strip()
-                    analysis_data['product_line'] = product_match
             
-            # Get intelligent folder recommendation
-            recommended_folder = drive_service.get_intelligent_folder_recommendation(
-                filename, file_type, analysis_data
-            )
-            
-            # Apply naming convention
-            suggested_filename = naming_service.apply_naming_convention(filename, analysis_data)
-            
-            # Update the destination with intelligent recommendation
-            result['destination'] = f'''<div class="destination-path">📁 {recommended_folder}</div>
-                                      <div class="suggested-name">📝 Suggested: <code>{suggested_filename}</code></div>'''
+            # Extract from structured summary
+            if 'Content Category:' in summary_text:
+                category_match = summary_text.split('Content Category:')[1].split('<br>')[0].strip()
+                analysis_data['content_category'] = category_match
+            if 'Product Line:' in summary_text:
+                product_match = summary_text.split('Product Line:')[1].split('<br>')[0].strip()
+                analysis_data['product_line'] = product_match
+            if 'Industry:' in summary_text:
+                industry_match = summary_text.split('Industry:')[1].split('<br>')[0].strip()
+                analysis_data['industry'] = industry_match
+        
+        # Ensure we have some analysis data for folder recommendation
+        if not analysis_data:
+            analysis_data = {
+                'content_category': 'GENERAL',
+                'product_line': 'MA',
+                'industry': 'general'
+            }
+        
+        # Get intelligent folder recommendation using real analysis data
+        recommended_folder = drive_service.get_intelligent_folder_recommendation(
+            filename, file_type, analysis_data
+        )
+        
+        # Apply naming convention
+        suggested_filename = naming_service.apply_naming_convention(filename, analysis_data)
+        
+        # Update the destination with intelligent recommendation
+        result['destination'] = f'''<div class="destination-path">📁 {recommended_folder}</div>
+                                  <div class="suggested-name">📝 Suggested: <code>{suggested_filename}</code></div>'''
         
         return jsonify(result)
         

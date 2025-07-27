@@ -1380,9 +1380,15 @@ def upload_file():
         
         if drive_service.is_available():
             try:
+                # Debug: Print the analysis data to see what we're getting
+                print(f"🔍 DEBUG: Full analysis data: {analysis}")
+                
                 # Get the folder recommendation from analysis
                 folder_recommendation = analysis.get('folder_data', {})
+                print(f"🔍 DEBUG: Folder recommendation data: {folder_recommendation}")
+                
                 recommended_folder_path = folder_recommendation.get('recommended_folder', folder_path)
+                print(f"🔍 DEBUG: Recommended folder path: {recommended_folder_path}")
                 
                 # Find the actual folder ID for the recommended path
                 target_folder_id = find_folder_by_path(drive_service.service, recommended_folder_path, MARKETING_HUB_FOLDER_ID)

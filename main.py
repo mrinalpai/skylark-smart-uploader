@@ -1315,7 +1315,8 @@ HTML_TEMPLATE = """
                     destinationSection.innerHTML = `
                         <div class="destination-header">✅ Upload Complete</div>
                         <div class="destination-content">
-                            <div style="margin-bottom: 8px;">File uploaded successfully to Marketing Hub</div>
+                            <div style="margin-bottom: 8px;">📁 Uploaded to: <strong>${result.folder_path || 'Marketing Hub'}</strong></div>
+                            <div style="margin-bottom: 8px; font-size: 13px; color: var(--skylark-gray);">📝 Final name: <code>${result.final_name || result.original_name}</code></div>
                             <a href="${result.file_link}" target="_blank" style="color: var(--skylark-blue); text-decoration: none; font-weight: 600;">
                                 🔗 View File in Drive
                             </a>
@@ -1664,7 +1665,7 @@ def upload_file():
         
         # Try to upload to Google Drive
         file_id = None
-        folder_path = "Marketing Hub/02_Product Lines & Sub-Brands/General"  # Default
+        folder_path = "Marketing Hub → General → Uploads"  # Default fallback
         
         if drive_service.is_available():
             try:
@@ -1678,18 +1679,34 @@ def upload_file():
                 recommended_folder_path = folder_recommendation.get('recommended_folder', folder_path)
                 print(f"🔍 DEBUG: Recommended folder path: {recommended_folder_path}")
                 
+                # Ensure the folder path uses the correct format (→ arrows)
+                if '/' in recommended_folder_path and '→' not in recommended_folder_path:
+                    # Convert slash format to arrow format
+                    recommended_folder_path = recommended_folder_path.replace('/', ' → ')
+                    print(f"🔄 Converted folder path format: {recommended_folder_path}")
+                
                 # Find the actual folder ID for the recommended path
                 target_folder_id = find_folder_by_path(drive_service.service, recommended_folder_path, MARKETING_HUB_FOLDER_ID)
                 
                 if not target_folder_id:
-                    print(f"⚠️ Could not find folder for path: {recommended_folder_path}, using Marketing Hub root")
-                    target_folder_id = MARKETING_HUB_FOLDER_ID
+                    print(f"⚠️ Could not find folder for path: {recommended_folder_path}")
+                    print(f"⚠️ Trying fallback folder: {folder_path}")
+                    target_folder_id = find_folder_by_path(drive_service.service, folder_path, MARKETING_HUB_FOLDER_ID)
+                    
+                    if not target_folder_id:
+                        print(f"⚠️ Fallback folder also not found, using Marketing Hub root")
+                        target_folder_id = MARKETING_HUB_FOLDER_ID
+                        folder_path = "Marketing Hub"
+                    else:
+                        print(f"✅ Using fallback folder: {folder_path}")
+                else:
+                    folder_path = recommended_folder_path
+                    print(f"✅ Using recommended folder: {folder_path}")
                 
                 # Upload file to the correct folder
                 file_id = upload_to_drive(drive_service.service, file, suggested_filename, target_folder_id)
-                folder_path = recommended_folder_path
                 
-                print(f"✅ File uploaded to Google Drive: {file_id} in folder: {recommended_folder_path}")
+                print(f"✅ File uploaded to Google Drive: {file_id} in folder: {folder_path}")
                 
             except Exception as e:
                 print(f"❌ Drive upload failed: {e}")

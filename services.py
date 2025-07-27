@@ -455,7 +455,7 @@ class DriveService:
                 else:
                     return "Marketing Hub → 02_Product Lines & Sub-Brands → Bharat Series"
             
-            # Content type mapping
+            # Content type mapping - Enhanced for Marketing content
             elif content_category in ['BRAND', 'LOGO']:
                 return "Marketing Hub → 01_Brand Assets → Logos & Visual Identity"
             
@@ -465,8 +465,25 @@ class DriveService:
             elif content_category in ['TECH', 'TECHNICAL']:
                 return "Marketing Hub → 05_Technical Documentation"
             
-            elif content_category in ['MARKETING', 'CAMPAIGN']:
-                return "Marketing Hub → 03_Marketing Campaigns → Campaign Assets"
+            elif content_category in ['MARKETING', 'CAMPAIGN', 'MARK']:
+                # Enhanced marketing content mapping
+                if 'brochure' in filename_lower or 'product' in filename_lower:
+                    return "Marketing Hub → 03_Marketing Campaigns → Product Brochures"
+                elif 'profile' in filename_lower or 'company' in filename_lower:
+                    return "Marketing Hub → 01_Brand Assets → Company Profiles"
+                elif 'dmo' in product_line.lower() or 'software' in filename_lower:
+                    return "Marketing Hub → 02_Product Lines & Sub-Brands → Software Platform → Marketing Materials"
+                else:
+                    return "Marketing Hub → 03_Marketing Campaigns → Campaign Assets"
+            
+            # Product line specific mapping for DMO/Software Platform
+            elif 'dmo' in product_line.lower() or 'software' in product_line.lower():
+                if content_category in ['TECH', 'TECHNICAL']:
+                    return "Marketing Hub → 02_Product Lines & Sub-Brands → Software Platform → Technical Documentation"
+                elif 'brochure' in filename_lower or 'profile' in filename_lower:
+                    return "Marketing Hub → 02_Product Lines & Sub-Brands → Software Platform → Marketing Materials"
+                else:
+                    return "Marketing Hub → 02_Product Lines & Sub-Brands → Software Platform"
             
             else:
                 print("⚠️ No specific mapping found, using general folder")
@@ -500,13 +517,22 @@ class DriveService:
         elif any(term in filename_lower for term in ['bharat', 'bs-']):
             return "Marketing Hub → 02_Product Lines & Sub-Brands → Bharat Series"
         
-        # Content type fallback
+        # Content type fallback - Enhanced for Marketing content
         elif any(term in filename_lower for term in ['presentation', 'ppt', 'sales']):
             return "Marketing Hub → 04_Sales Enablement → Presentations"
         elif any(term in filename_lower for term in ['technical', 'spec', 'manual']):
             return "Marketing Hub → 05_Technical Documentation"
         elif any(term in filename_lower for term in ['brand', 'logo']):
             return "Marketing Hub → 01_Brand Assets"
+        elif any(term in filename_lower for term in ['brochure', 'profile', 'marketing']):
+            if 'corporate' in filename_lower or 'company' in filename_lower:
+                return "Marketing Hub → 01_Brand Assets → Company Profiles"
+            elif 'product' in filename_lower:
+                return "Marketing Hub → 03_Marketing Campaigns → Product Brochures"
+            else:
+                return "Marketing Hub → 03_Marketing Campaigns → Campaign Assets"
+        elif content_category in ['MARKETING', 'MARK']:
+            return "Marketing Hub → 03_Marketing Campaigns → Campaign Assets"
         else:
             return "Marketing Hub → General → Uploads"
     

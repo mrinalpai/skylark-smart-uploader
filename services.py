@@ -22,7 +22,7 @@ class GeminiService:
         if self.api_key:
             try:
                 genai.configure(api_key=self.api_key)
-                self.model = genai.GenerativeModel('gemini-pro')
+                self.model = genai.GenerativeModel('gemini-2.5-pro')
             except Exception as e:
                 print(f"Gemini initialization error: {e}")
                 self.model = None
@@ -173,12 +173,15 @@ class GeminiService:
         """Fallback analysis when Gemini is not available"""
         current_date = datetime.now().strftime('%Y%m%d')
         
+        # Determine if this is actually a fallback or if Gemini failed
+        gemini_status = "Gemini 2.0 Flash temporarily unavailable" if self.is_available() else "Gemini API not configured"
+        
         return {
-            "summary": f"""<strong>Intelligent Fallback Analysis</strong><br><br>
+            "summary": f"""<strong>⚠️ Fallback Analysis Active</strong><br><br>
                           <strong>File:</strong> {filename}<br>
                           <strong>Type:</strong> {file_type}<br>
                           <strong>Size:</strong> {file_size} bytes<br><br>
-                          <em>Gemini API temporarily unavailable. Using intelligent pattern recognition.</em>""",
+                          <em>{gemini_status}. Using intelligent pattern recognition.</em>""",
             
             "details": '''<div class="ai-metrics">
                             <div class="ai-metric">

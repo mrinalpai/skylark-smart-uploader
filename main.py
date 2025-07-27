@@ -962,7 +962,31 @@ HTML_TEMPLATE = """
                 
                 const result = await response.json();
                 
-                // Update UI with analysis results
+                // Display progress updates if available
+                if (result.progress_updates && result.progress_updates.length > 0) {
+                    const analysisElement = document.getElementById(`analysis-${fileId}`);
+                    const destinationElement = document.getElementById(`destination-${fileId}`);
+                    
+                    // Show progress step by step
+                    for (let i = 0; i < result.progress_updates.length; i++) {
+                        const update = result.progress_updates[i];
+                        
+                        if (update.step === 1) {
+                            analysisElement.innerHTML = `${update.message}`;
+                        } else if (update.step === 2) {
+                            destinationElement.innerHTML = `${update.message}`;
+                        } else if (update.step === 3) {
+                            destinationElement.innerHTML = `${update.message}`;
+                        }
+                        
+                        // Small delay to show progress
+                        if (i < result.progress_updates.length - 1) {
+                            await new Promise(resolve => setTimeout(resolve, 500));
+                        }
+                    }
+                }
+                
+                // Update UI with final analysis results
                 document.getElementById(`analysis-${fileId}`).innerHTML = result.summary;
                 document.getElementById(`details-${fileId}`).innerHTML = result.details;
                 document.getElementById(`destination-${fileId}`).innerHTML = result.destination;

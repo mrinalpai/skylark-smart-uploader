@@ -1118,6 +1118,11 @@ HTML_TEMPLATE = """
                 
                 const result = await response.json();
                 
+                // Check if response indicates an error
+                if (!response.ok || result.status === 'error') {
+                    throw new Error(result.message || `HTTP ${response.status}: ${response.statusText}`);
+                }
+                
                 // Complete progress
                 clearInterval(progressInterval);
                 const progressFill = progressBar.querySelector('.progress-fill');
@@ -1141,7 +1146,7 @@ HTML_TEMPLATE = """
                 statusElement.className = 'file-status status-error';
                 statusElement.textContent = 'Error';
                 
-                alert('Upload failed. Please try again.');
+                alert(`Upload failed: ${error.message}`);
             }
         }
         

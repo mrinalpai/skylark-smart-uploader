@@ -490,34 +490,74 @@ HTML_TEMPLATE = """
             color: var(--success-green);
         }
         
-        .ai-summary {
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(139, 92, 246, 0.05));
-            border-radius: 12px;
+         .ai-summary {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
             padding: 24px;
-            margin: 24px 0;
-            border: 1px solid rgba(102, 126, 234, 0.1);
+            margin: 20px 0;
+            border-left: 4px solid var(--skylark-blue);
+            backdrop-filter: blur(10px);
         }
         
         .ai-label {
-            font-size: 12px;
-            font-weight: 700;
-            color: var(--skylark-blue);
-            text-transform: uppercase;
-            margin-bottom: 16px;
             display: flex;
             align-items: center;
             gap: 8px;
+            font-weight: 600;
+            color: var(--skylark-blue);
+            margin-bottom: 12px;
+            font-size: 14px;
         }
         
         .ai-content {
             color: var(--skylark-dark);
-            font-size: 15px;
-            line-height: 1.7;
+            line-height: 1.6;
+            margin-bottom: 16px;
         }
         
         .ai-details {
-            margin-top: 16px;
-            padding-top: 16px;
+            font-size: 14px;
+            color: var(--skylark-gray);
+        }
+        
+        /* Minimal Circle Progress Indicator */
+        .step-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--skylark-gray);
+            margin-left: 8px;
+        }
+        
+        .progress-circle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #e5e7eb;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: conic-gradient(var(--skylark-orange) 0deg, var(--skylark-orange) var(--progress, 0deg), transparent var(--progress, 0deg));
+            border-radius: 50%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .step-text {
+            font-weight: 500;
+        }        padding-top: 16px;
             border-top: 1px solid rgba(102, 126, 234, 0.1);
         }
         
@@ -909,10 +949,16 @@ HTML_TEMPLATE = """
                 </div>
                 
                 <div class="ai-summary">
-                    <div class="ai-label">
-                        🧠 AI Analysis
-                        <span class="gemini-badge">Google Gemini Pro</span>
+                <div class="ai-label">
+                    🧠 AI Analysis
+                    <span class="gemini-badge">Google Gemini Pro</span>
+                    <div class="step-indicator" id="step-indicator-${fileId}">
+                        <div class="progress-circle">
+                            <div class="progress-fill" style="--progress: 0deg;"></div>
+                        </div>
+                        <span class="step-text">Step 1 of 3</span>
                     </div>
+                </div>
                     <div class="ai-content" id="analysis-${fileId}">
                         Analyzing file content and determining optimal organization...
                     </div>
@@ -966,17 +1012,30 @@ HTML_TEMPLATE = """
                 if (result.progress_updates && result.progress_updates.length > 0) {
                     const analysisElement = document.getElementById(`analysis-${fileId}`);
                     const destinationElement = document.getElementById(`destination-${fileId}`);
+                    const stepIndicator = document.getElementById(`step-indicator-${fileId}`);
                     
                     // Show progress step by step
                     for (let i = 0; i < result.progress_updates.length; i++) {
                         const update = result.progress_updates[i];
                         
-                        if (update.step === 1) {
-                            analysisElement.innerHTML = `${update.message}`;
-                        } else if (update.step === 2) {
-                            destinationElement.innerHTML = `${update.message}`;
-                        } else if (update.step === 3) {
-                            destinationElement.innerHTML = `${update.message}`;
+                        // Update step indicator
+                        if (stepIndicator) {
+                            const progressFill = stepIndicator.querySelector('.progress-fill');
+                            const stepText = stepIndicator.querySelector('.step-text');
+                            
+                            if (update.step === 1) {
+                                progressFill.style.setProperty('--progress', '120deg');
+                                stepText.textContent = 'Step 1 of 3';
+                                analysisElement.innerHTML = `${update.message}`;
+                            } else if (update.step === 2) {
+                                progressFill.style.setProperty('--progress', '240deg');
+                                stepText.textContent = 'Step 2 of 3';
+                                destinationElement.innerHTML = `${update.message}`;
+                            } else if (update.step === 3) {
+                                progressFill.style.setProperty('--progress', '360deg');
+                                stepText.textContent = 'Step 3 of 3';
+                                destinationElement.innerHTML = `${update.message}`;
+                            }
                         }
                         
                         // Small delay to show progress
@@ -984,6 +1043,13 @@ HTML_TEMPLATE = """
                             await new Promise(resolve => setTimeout(resolve, 500));
                         }
                     }
+                    
+                    // Hide step indicator when complete
+                    setTimeout(() => {
+                        if (stepIndicator) {
+                            stepIndicator.style.display = 'none';
+                        }
+                    }, 1000);
                 }
                 
                 // Update UI with final analysis results

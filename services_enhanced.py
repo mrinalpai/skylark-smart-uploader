@@ -708,22 +708,42 @@ class IntelligentWorkflowOrchestrator:
     
     def _create_comprehensive_result(self, filename, content_analysis, folder_recommendation, suggested_filename):
         """Create comprehensive result from all workflow steps"""
+        # Ensure all required fields exist with defaults
+        safe_content_analysis = {
+            'document_type': 'Document',
+            'content_category': 'General',
+            'product_line': 'Marketing',
+            'industry': 'General',
+            'target_audience': 'General',
+            'business_impact': 'Medium',
+            'technical_complexity': 'Intermediate',
+            'content_description': 'Business document',
+            'confidence_score': '95'
+        }
+        safe_content_analysis.update(content_analysis or {})
+        
+        safe_folder_recommendation = {
+            'recommended_folder': 'Marketing Hub → General',
+            'reasoning': 'Intelligent recommendation based on content analysis'
+        }
+        safe_folder_recommendation.update(folder_recommendation or {})
+        
         return {
             "summary": f"""<strong>🧠 Gemini 2.5 Pro Analysis Complete</strong><br><br>
-                          <strong>Document Type:</strong> {content_analysis.get('document_type', 'Document')}<br>
-                          <strong>Content Category:</strong> {content_analysis.get('content_category', 'General')}<br>
-                          <strong>Product Line:</strong> {content_analysis.get('product_line', 'Marketing')}<br>
-                          <strong>Industry:</strong> {content_analysis.get('industry', 'General')}<br>
-                          <strong>Target Audience:</strong> {content_analysis.get('target_audience', 'General')}<br>
-                          <strong>Business Impact:</strong> {content_analysis.get('business_impact', 'Medium')}<br>
-                          <strong>Technical Complexity:</strong> {content_analysis.get('technical_complexity', 'Intermediate')}<br><br>
-                          <strong>Content:</strong> {content_analysis.get('content_description', 'Business document')}<br><br>
+                          <strong>Document Type:</strong> {safe_content_analysis.get('document_type')}<br>
+                          <strong>Content Category:</strong> {safe_content_analysis.get('content_category')}<br>
+                          <strong>Product Line:</strong> {safe_content_analysis.get('product_line')}<br>
+                          <strong>Industry:</strong> {safe_content_analysis.get('industry')}<br>
+                          <strong>Target Audience:</strong> {safe_content_analysis.get('target_audience')}<br>
+                          <strong>Business Impact:</strong> {safe_content_analysis.get('business_impact')}<br>
+                          <strong>Technical Complexity:</strong> {safe_content_analysis.get('technical_complexity')}<br><br>
+                          <strong>Content:</strong> {safe_content_analysis.get('content_description')}<br><br>
                           <em>3-step AI workflow: Content Analysis → Folder Reading → Intelligent Recommendation</em>""",
             
             "details": f'''<div class="ai-metrics">
                             <div class="ai-metric">
                                 <div class="ai-metric-label">Confidence</div>
-                                <div class="ai-metric-value">{content_analysis.get('confidence_score', '95')}%</div>
+                                <div class="ai-metric-value">{safe_content_analysis.get('confidence_score')}%</div>
                             </div>
                             <div class="ai-metric">
                                 <div class="ai-metric-label">Analysis</div>
@@ -731,13 +751,13 @@ class IntelligentWorkflowOrchestrator:
                             </div>
                           </div>''',
             
-            "destination": f'''<div class="destination-path">📁 {folder_recommendation.get('recommended_folder', 'Marketing Hub → General')}</div>
-                              <div class="folder-reasoning">💡 {folder_recommendation.get('reasoning', 'Intelligent recommendation based on content analysis')}</div>
-                              <div class="suggested-name">📝 Suggested: <code>{suggested_filename}</code></div>''',
+            "destination": f'''<div class="destination-path">📁 {safe_folder_recommendation.get('recommended_folder')}</div>
+                              <div class="folder-reasoning">💡 {safe_folder_recommendation.get('reasoning')}</div>
+                              <div class="suggested-name">📝 Suggested: <code>{suggested_filename or filename}</code></div>''',
             
             # Store analysis data for further use
-            "analysis_data": content_analysis,
-            "folder_data": folder_recommendation
+            "analysis_data": safe_content_analysis,
+            "folder_data": safe_folder_recommendation
         }
     
     def _create_fallback_result(self, filename, file_type, file_size):
@@ -767,12 +787,23 @@ class IntelligentWorkflowOrchestrator:
                           </div>''',
             
             "destination": f'''<div class="destination-path">📁 Marketing Hub → General → Uploads</div>
-                              <div class="suggested-name">📝 Suggested: <code>MA-GEN_{filename.split('.')[0]}_{current_date}_v01.{filename.split('.')[-1] if '.' in filename else 'pdf'}</code></div>''',
+                              <div class="folder-reasoning">💡 Using fallback folder recommendation</div>
+                              <div class="suggested-name">📝 Suggested: <code>MA-GEN_{filename.split('.')[0] if '.' in filename else filename}_{current_date}_v01.{filename.split('.')[-1] if '.' in filename else 'pdf'}</code></div>''',
             
             "analysis_data": {
                 'content_category': 'GENERAL',
                 'product_line': 'MA',
-                'industry': 'General'
+                'industry': 'General',
+                'document_type': 'Document',
+                'target_audience': 'General',
+                'business_impact': 'Medium',
+                'technical_complexity': 'Intermediate',
+                'content_description': 'Business document',
+                'confidence_score': '70'
+            },
+            "folder_data": {
+                'recommended_folder': 'Marketing Hub → General → Uploads',
+                'reasoning': 'Using fallback folder recommendation'
             }
         }
 

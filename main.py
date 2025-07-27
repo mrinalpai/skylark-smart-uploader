@@ -340,6 +340,12 @@ HTML_TEMPLATE = """
             transform: translateY(-1px);
         }
         
+        .header-links {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+        }
+        
         .upload-zone {
             border: 3px dashed #e2e8f0;
             border-radius: 20px;
@@ -842,9 +848,14 @@ HTML_TEMPLATE = """
             <div class="upload-interface">
                 <div class="upload-header">
                     <h2 class="upload-title">Upload to Marketing Hub</h2>
-                    <a href="https://docs.google.com/document/d/{{ naming_convention_doc_id }}/edit" target="_blank" class="naming-convention-link">
-                        📋 File Naming Convention
-                    </a>
+                    <div class="header-links">
+                        <a href="https://drive.google.com/drive/folders/{{ marketing_hub_folder_id }}" target="_blank" class="naming-convention-link">
+                            📁 Marketing Hub
+                        </a>
+                        <a href="https://docs.google.com/document/d/{{ naming_convention_doc_id }}/edit" target="_blank" class="naming-convention-link">
+                            📋 File Naming Convention
+                        </a>
+                    </div>
                 </div>
                 
                 <div class="upload-zone" id="uploadZone">
@@ -1188,7 +1199,8 @@ def index():
     user_info = session.get('user_info')
     return render_template_string(HTML_TEMPLATE, 
                                 user_info=user_info,
-                                naming_convention_doc_id=NAMING_CONVENTION_DOC_ID)
+                                naming_convention_doc_id=NAMING_CONVENTION_DOC_ID,
+                                marketing_hub_folder_id=MARKETING_HUB_FOLDER_ID)
 
 @app.route('/static/<path:filename>')
 def static_files(filename):

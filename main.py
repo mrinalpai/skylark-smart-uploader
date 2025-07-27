@@ -1240,10 +1240,26 @@ def gemini_analyze():
     try:
         # Initialize services with user credentials
         access_token = session.get('access_token')
+        refresh_token = session.get('refresh_token')
         credentials = None
         
         if access_token:
-            credentials = Credentials(token=access_token)
+            try:
+                # Create proper credentials with all OAuth data
+                credentials = Credentials(
+                    token=access_token,
+                    refresh_token=refresh_token,
+                    token_uri='https://oauth2.googleapis.com/token',
+                    client_id=GOOGLE_CLIENT_ID,
+                    client_secret=GOOGLE_CLIENT_SECRET,
+                    scopes=['https://www.googleapis.com/auth/drive']
+                )
+                print(f"✅ Created credentials with token: {access_token[:20]}...")
+            except Exception as e:
+                print(f"❌ Error creating credentials: {e}")
+                credentials = None
+        else:
+            print("❌ No access token found in session")
         
         drive_service = DriveService(credentials)
         naming_service = NamingConventionService(drive_service, NAMING_CONVENTION_DOC_ID)

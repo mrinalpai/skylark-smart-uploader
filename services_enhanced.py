@@ -336,16 +336,34 @@ class DriveService:
         
         if credentials:
             try:
-                self.service = build('drive', 'v3', credentials=credentials)
-                print("✅ Drive API service initialized successfully")
+                # Ensure credentials have the required token
+                if hasattr(credentials, 'token') and credentials.token:
+                    self.service = build('drive', 'v3', credentials=credentials)
+                    print("✅ Drive API service initialized successfully with valid credentials")
+                else:
+                    print("❌ Drive API credentials missing token")
             except Exception as e:
                 print(f"❌ Drive service initialization error: {e}")
+        else:
+            print("❌ No credentials provided for Drive API")
     
     def is_available(self):
         """Check if Drive API is available"""
         available = self.service is not None
-        print(f"🔍 Drive API Available: {available}")
-        return available
+        if available:
+            # Test the connection by making a simple API call
+            try:
+                # Try to get user info to verify the connection works
+                about = self.service.about().get(fields="user").execute()
+                print(f"✅ Drive API Available: True (User: {about.get('user', {}).get('emailAddress', 'Unknown')})")
+                return True
+            except Exception as e:
+                print(f"❌ Drive API connection test failed: {e}")
+                self.service = None
+                return False
+        else:
+            print(f"❌ Drive API Available: False (No service initialized)")
+            return False
     
     def read_document(self, file_id):
         """Read a Google Docs document content"""
@@ -375,10 +393,23 @@ class DriveService:
             return self._fallback_folder_structure()
         
         try:
-            print(f"📁 Step 2: Reading real folder structure from: {folder_id}")
+            print(f"📁 Step 2: Reading real folder structure from Marketing Hub: {folder_id}")
+            
+            # First, verify we can access the folder
+            try:
+                folder_info = self.service.files().get(fileId=folder_id, fields="id,name").execute()
+                print(f"✅ Successfully accessed folder: {folder_info.get('name', 'Unknown')}")
+            except Exception as e:
+                print(f"❌ Cannot access Marketing Hub folder {folder_id}: {e}")
+                return self._fallback_folder_structure()
+            
             folders = []
             folder_map = {}
             self._get_folders_recursive(folder_id, folders, folder_map, 0, max_depth)
+            
+            if not folders:
+                print("⚠️ No folders found in Marketing Hub, using fallback")
+                return self._fallback_folder_structure()
             
             structure = self._format_folder_structure_for_gemini(folders, folder_map)
             print(f"✅ Step 2 Complete: Real folder structure read ({len(folders)} folders)")

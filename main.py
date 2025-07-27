@@ -1269,6 +1269,20 @@ def gemini_analyze():
             gemini_service, drive_service, naming_service
         )
         
+        # Set up progress tracking for real-time updates
+        progress_updates = []
+        
+        def progress_callback(step, progress, message):
+            """Callback to capture progress updates"""
+            progress_updates.append({
+                'step': step,
+                'progress': progress,
+                'message': message,
+                'timestamp': datetime.now().isoformat()
+            })
+        
+        workflow_orchestrator.set_progress_callback(progress_callback)
+        
         # Execute the 3-step intelligent workflow
         result = workflow_orchestrator.execute_intelligent_workflow(
             filename=filename,
@@ -1276,6 +1290,9 @@ def gemini_analyze():
             file_size=file_size,
             marketing_hub_folder_id=MARKETING_HUB_FOLDER_ID
         )
+        
+        # Add progress updates to result
+        result['progress_updates'] = progress_updates
         
         return jsonify(result)
         

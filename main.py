@@ -8,7 +8,7 @@ import base64
 import json
 from datetime import datetime
 from google.oauth2.credentials import Credentials
-from services import GeminiService, DriveService, NamingConventionService
+from services_enhanced import GeminiService, DriveService, NamingConventionService, IntelligentWorkflowOrchestrator
 
 app = Flask(__name__)
 CORS(app)
@@ -1248,57 +1248,18 @@ def gemini_analyze():
         drive_service = DriveService(credentials)
         naming_service = NamingConventionService(drive_service, NAMING_CONVENTION_DOC_ID)
         
-        # Get naming convention rules and folder structure
-        naming_rules = naming_service.get_naming_rules()
-        folder_structure = drive_service.get_folder_structure(MARKETING_HUB_FOLDER_ID)
+        # Create the intelligent workflow orchestrator
+        workflow_orchestrator = IntelligentWorkflowOrchestrator(
+            gemini_service, drive_service, naming_service
+        )
         
-        # Analyze file with enhanced Gemini integration
-        result = gemini_service.analyze_file(
+        # Execute the 3-step intelligent workflow
+        result = workflow_orchestrator.execute_intelligent_workflow(
             filename=filename,
             file_type=file_type,
             file_size=file_size,
-            naming_convention_rules=naming_rules,
-            folder_structure=folder_structure
+            marketing_hub_folder_id=MARKETING_HUB_FOLDER_ID
         )
-        
-        # Get analysis data from Gemini response
-        analysis_data = result.get('analysis_data', {})
-        
-        # If no analysis data, extract from summary (fallback)
-        if not analysis_data and gemini_service.is_available():
-            summary_text = result.get('summary', '')
-            analysis_data = {}
-            
-            # Extract from structured summary
-            if 'Content Category:' in summary_text:
-                category_match = summary_text.split('Content Category:')[1].split('<br>')[0].strip()
-                analysis_data['content_category'] = category_match
-            if 'Product Line:' in summary_text:
-                product_match = summary_text.split('Product Line:')[1].split('<br>')[0].strip()
-                analysis_data['product_line'] = product_match
-            if 'Industry:' in summary_text:
-                industry_match = summary_text.split('Industry:')[1].split('<br>')[0].strip()
-                analysis_data['industry'] = industry_match
-        
-        # Ensure we have some analysis data for folder recommendation
-        if not analysis_data:
-            analysis_data = {
-                'content_category': 'GENERAL',
-                'product_line': 'MA',
-                'industry': 'general'
-            }
-        
-        # Get intelligent folder recommendation using real analysis data
-        recommended_folder = drive_service.get_intelligent_folder_recommendation(
-            filename, file_type, analysis_data
-        )
-        
-        # Apply naming convention
-        suggested_filename = naming_service.apply_naming_convention(filename, analysis_data)
-        
-        # Update the destination with intelligent recommendation
-        result['destination'] = f'''<div class="destination-path">📁 {recommended_folder}</div>
-                                  <div class="suggested-name">📝 Suggested: <code>{suggested_filename}</code></div>'''
         
         return jsonify(result)
         

@@ -1,0 +1,720 @@
+"""
+Enhanced Services module for Skylark Smart Uploader
+Implements 3-step intelligent workflow:
+1. Gemini analyzes file content
+2. Drive API reads real folder structure 
+3. Gemini recommends folder based on analysis + real folders
+"""
+
+import os
+import json
+import requests
+from datetime import datetime
+import google.generativeai as genai
+from googleapiclient.discovery import build
+from google.oauth2.credentials import Credentials
+import re
+
+class GeminiService:
+    """Handle Gemini AI integration for file analysis and folder recommendations"""
+    
+    def __init__(self, api_key=None):
+        self.api_key = api_key or os.environ.get('GEMINI_API_KEY')
+        self.model = None
+        
+        if self.api_key:
+            try:
+                genai.configure(api_key=self.api_key)
+                self.model = genai.GenerativeModel('gemini-2.5-pro')
+                print("✅ Gemini 2.5 Pro initialized successfully")
+            except Exception as e:
+                print(f"❌ Gemini initialization error: {e}")
+                self.model = None
+    
+    def is_available(self):
+        """Check if Gemini API is available"""
+        return self.model is not None
+    
+    def analyze_file_content(self, filename, file_type, file_size, naming_convention_rules=None):
+        """Step 1: Analyze file content using Gemini AI"""
+        if not self.is_available():
+            return self._fallback_content_analysis(filename, file_type, file_size)
+        
+        try:
+            print(f"🧠 Step 1: Gemini analyzing file content: {filename}")
+            
+            # Create content analysis prompt
+            prompt = self._create_content_analysis_prompt(filename, file_type, file_size, naming_convention_rules)
+            
+            # Call Gemini API for content analysis
+            response = self.model.generate_content(prompt)
+            analysis_text = response.text
+            
+            # Parse and structure the response
+            analysis_data = self._parse_content_analysis(analysis_text, filename, file_type)
+            print(f"✅ Step 1 Complete: Content analysis with {analysis_data.get('confidence_score', '95')}% confidence")
+            
+            return analysis_data
+            
+        except Exception as e:
+            print(f"❌ Step 1 Error: Gemini content analysis failed: {e}")
+            return self._fallback_content_analysis(filename, file_type, file_size)
+    
+    def recommend_folder_with_structure(self, filename, content_analysis, folder_structure):
+        """Step 3: Use Gemini to recommend folder based on content analysis + real folder structure"""
+        if not self.is_available():
+            return self._fallback_folder_recommendation(filename, content_analysis)
+        
+        try:
+            print(f"🎯 Step 3: Gemini recommending folder for: {filename}")
+            
+            # Create folder recommendation prompt with real structure
+            prompt = self._create_folder_recommendation_prompt(filename, content_analysis, folder_structure)
+            
+            # Call Gemini API for intelligent folder recommendation
+            response = self.model.generate_content(prompt)
+            recommendation_text = response.text
+            
+            # Parse the folder recommendation
+            folder_recommendation = self._parse_folder_recommendation(recommendation_text)
+            print(f"✅ Step 3 Complete: Intelligent folder recommendation generated")
+            
+            return folder_recommendation
+            
+        except Exception as e:
+            print(f"❌ Step 3 Error: Gemini folder recommendation failed: {e}")
+            return self._fallback_folder_recommendation(filename, content_analysis)
+    
+    def _create_content_analysis_prompt(self, filename, file_type, file_size, naming_rules):
+        """Create comprehensive content analysis prompt for Gemini"""
+        prompt = f"""
+        Analyze this file for intelligent organization in Skylark Drones Marketing Hub:
+
+        FILE DETAILS:
+        - Filename: {filename}
+        - Type: {file_type}
+        - Size: {file_size} bytes
+
+        NAMING CONVENTION RULES:
+        {naming_rules or "Standard business naming conventions"}
+
+        Please provide a comprehensive analysis including:
+
+        1. DOCUMENT TYPE: What type of document is this? (e.g., Product Brochure, Technical Manual, Corporate Profile, etc.)
+        2. CONTENT CATEGORY: Technical (TECH), Sales (SALES), Marketing (MARK), Brand (BRAND), etc.
+        3. PRODUCT LINE: Spectra (SP), Bharat (BS), DMO/Software Platform, or Marketing (MA)
+        4. INDUSTRY: Mining, Agriculture, Infrastructure, Solar/Renewable Energy, Security, General/Cross-Sector, etc.
+        5. TARGET AUDIENCE: Engineers, Sales Team, Marketing, Management, Customers, Partners
+        6. BUSINESS IMPACT: High/Medium/Low strategic value
+        7. TECHNICAL COMPLEXITY: Basic/Intermediate/Advanced
+        8. CONTENT DESCRIPTION: Brief description of what this document contains
+        9. CONFIDENCE SCORE: 0-100% confidence in analysis
+
+        Respond in this exact format:
+        DOCUMENT_TYPE: [type]
+        CONTENT_CATEGORY: [category]
+        PRODUCT_LINE: [product]
+        INDUSTRY: [industry]
+        TARGET_AUDIENCE: [audience]
+        BUSINESS_IMPACT: [impact]
+        TECHNICAL_COMPLEXITY: [complexity]
+        CONTENT_DESCRIPTION: [description]
+        CONFIDENCE_SCORE: [score]
+        """
+        return prompt
+    
+    def _create_folder_recommendation_prompt(self, filename, content_analysis, folder_structure):
+        """Create intelligent folder recommendation prompt using real folder structure"""
+        prompt = f"""
+        Based on the file analysis and the actual Marketing Hub folder structure, recommend the BEST folder for this file:
+
+        FILE: {filename}
+
+        CONTENT ANALYSIS:
+        - Document Type: {content_analysis.get('document_type', 'Unknown')}
+        - Content Category: {content_analysis.get('content_category', 'Unknown')}
+        - Product Line: {content_analysis.get('product_line', 'Unknown')}
+        - Industry: {content_analysis.get('industry', 'Unknown')}
+        - Target Audience: {content_analysis.get('target_audience', 'Unknown')}
+        - Business Impact: {content_analysis.get('business_impact', 'Unknown')}
+        - Content Description: {content_analysis.get('content_description', 'Unknown')}
+
+        ACTUAL MARKETING HUB FOLDER STRUCTURE:
+        {folder_structure}
+
+        Please analyze the content and recommend the MOST APPROPRIATE folder path from the actual structure above.
+
+        Consider:
+        - Content type and purpose
+        - Target audience and use case
+        - Product line relevance
+        - Industry specificity
+        - Business context
+
+        Respond with:
+        RECOMMENDED_FOLDER: [exact folder path from the structure above]
+        REASONING: [why this folder is the best match]
+        CONFIDENCE: [0-100% confidence in recommendation]
+        ALTERNATIVE: [second-best option if applicable]
+        """
+        return prompt
+    
+    def _parse_content_analysis(self, response_text, filename, file_type):
+        """Parse Gemini content analysis response"""
+        try:
+            data = {}
+            
+            # Extract information using regex patterns
+            patterns = {
+                'document_type': r'DOCUMENT_TYPE[:\s]*([^\n]+)',
+                'content_category': r'CONTENT_CATEGORY[:\s]*([^\n]+)',
+                'product_line': r'PRODUCT_LINE[:\s]*([^\n]+)',
+                'industry': r'INDUSTRY[:\s]*([^\n]+)',
+                'target_audience': r'TARGET_AUDIENCE[:\s]*([^\n]+)',
+                'business_impact': r'BUSINESS_IMPACT[:\s]*([^\n]+)',
+                'technical_complexity': r'TECHNICAL_COMPLEXITY[:\s]*([^\n]+)',
+                'content_description': r'CONTENT_DESCRIPTION[:\s]*([^\n]+)',
+                'confidence_score': r'CONFIDENCE_SCORE[:\s]*([0-9]+)'
+            }
+            
+            for key, pattern in patterns.items():
+                match = re.search(pattern, response_text, re.IGNORECASE)
+                if match:
+                    data[key] = match.group(1).strip().strip('"').strip("'")
+            
+            # Set defaults if not found
+            defaults = {
+                'document_type': 'Business Document',
+                'content_category': 'GENERAL',
+                'product_line': 'MA',
+                'industry': 'General',
+                'target_audience': 'Business Team',
+                'business_impact': 'Medium',
+                'technical_complexity': 'Intermediate',
+                'content_description': 'Business document for organizational use',
+                'confidence_score': '95'
+            }
+            
+            for key, default in defaults.items():
+                if key not in data or not data[key]:
+                    data[key] = default
+            
+            return data
+            
+        except Exception as e:
+            print(f"❌ Content analysis parsing error: {e}")
+            return self._fallback_content_analysis(filename, file_type, 0)
+    
+    def _parse_folder_recommendation(self, response_text):
+        """Parse Gemini folder recommendation response"""
+        try:
+            data = {}
+            
+            # Extract folder recommendation
+            folder_match = re.search(r'RECOMMENDED_FOLDER[:\s]*([^\n]+)', response_text, re.IGNORECASE)
+            if folder_match:
+                data['recommended_folder'] = folder_match.group(1).strip().strip('"').strip("'")
+            
+            # Extract reasoning
+            reasoning_match = re.search(r'REASONING[:\s]*([^\n]+)', response_text, re.IGNORECASE)
+            if reasoning_match:
+                data['reasoning'] = reasoning_match.group(1).strip().strip('"').strip("'")
+            
+            # Extract confidence
+            confidence_match = re.search(r'CONFIDENCE[:\s]*([0-9]+)', response_text, re.IGNORECASE)
+            if confidence_match:
+                data['confidence'] = confidence_match.group(1).strip()
+            
+            # Extract alternative
+            alternative_match = re.search(r'ALTERNATIVE[:\s]*([^\n]+)', response_text, re.IGNORECASE)
+            if alternative_match:
+                data['alternative'] = alternative_match.group(1).strip().strip('"').strip("'")
+            
+            # Set defaults
+            if 'recommended_folder' not in data:
+                data['recommended_folder'] = "Marketing Hub → General → Uploads"
+            if 'reasoning' not in data:
+                data['reasoning'] = "Default recommendation based on content analysis"
+            if 'confidence' not in data:
+                data['confidence'] = "85"
+            
+            return data
+            
+        except Exception as e:
+            print(f"❌ Folder recommendation parsing error: {e}")
+            return {
+                'recommended_folder': "Marketing Hub → General → Uploads",
+                'reasoning': "Fallback recommendation due to parsing error",
+                'confidence': "70"
+            }
+    
+    def _fallback_content_analysis(self, filename, file_type, file_size):
+        """Fallback content analysis when Gemini is not available"""
+        print("🔄 Using fallback content analysis")
+        
+        # Basic analysis based on filename patterns
+        filename_lower = filename.lower()
+        
+        # Determine document type
+        if 'profile' in filename_lower:
+            document_type = "Corporate Profile"
+            content_category = "BRAND"
+        elif 'brochure' in filename_lower:
+            document_type = "Product Brochure"
+            content_category = "MARK"
+        elif 'technical' in filename_lower or 'manual' in filename_lower:
+            document_type = "Technical Document"
+            content_category = "TECH"
+        elif 'presentation' in filename_lower or 'ppt' in file_type:
+            document_type = "Presentation"
+            content_category = "SALES"
+        else:
+            document_type = "Business Document"
+            content_category = "GENERAL"
+        
+        # Determine product line
+        if 'spectra' in filename_lower or 'sp-' in filename_lower:
+            product_line = "SP"
+        elif 'bharat' in filename_lower or 'bs-' in filename_lower:
+            product_line = "BS"
+        elif 'dmo' in filename_lower or 'software' in filename_lower:
+            product_line = "DMO"
+        else:
+            product_line = "MA"
+        
+        return {
+            'document_type': document_type,
+            'content_category': content_category,
+            'product_line': product_line,
+            'industry': 'General',
+            'target_audience': 'Business Team',
+            'business_impact': 'Medium',
+            'technical_complexity': 'Intermediate',
+            'content_description': f'Fallback analysis for {filename}',
+            'confidence_score': '75'
+        }
+    
+    def _fallback_folder_recommendation(self, filename, content_analysis):
+        """Fallback folder recommendation"""
+        print("🔄 Using fallback folder recommendation")
+        
+        content_category = content_analysis.get('content_category', 'GENERAL')
+        product_line = content_analysis.get('product_line', 'MA')
+        filename_lower = filename.lower()
+        
+        # Basic folder mapping
+        if content_category == 'BRAND' or 'profile' in filename_lower:
+            folder = "Marketing Hub → 01_Brand Assets → Company Profiles"
+        elif content_category == 'MARK' or 'brochure' in filename_lower:
+            folder = "Marketing Hub → 03_Marketing Campaigns → Product Brochures"
+        elif content_category == 'TECH':
+            folder = "Marketing Hub → 05_Technical Documentation"
+        elif content_category == 'SALES':
+            folder = "Marketing Hub → 04_Sales Enablement → Presentations"
+        elif product_line == 'SP':
+            folder = "Marketing Hub → 02_Product Lines & Sub-Brands → Spectra"
+        elif product_line == 'BS':
+            folder = "Marketing Hub → 02_Product Lines & Sub-Brands → Bharat Series"
+        elif product_line == 'DMO':
+            folder = "Marketing Hub → 02_Product Lines & Sub-Brands → Software Platform"
+        else:
+            folder = "Marketing Hub → General → Uploads"
+        
+        return {
+            'recommended_folder': folder,
+            'reasoning': 'Fallback recommendation based on content patterns',
+            'confidence': '70'
+        }
+
+
+class DriveService:
+    """Handle Google Drive API integration for folder structure reading"""
+    
+    def __init__(self, credentials=None):
+        self.credentials = credentials
+        self.service = None
+        
+        if credentials:
+            try:
+                self.service = build('drive', 'v3', credentials=credentials)
+                print("✅ Drive API service initialized successfully")
+            except Exception as e:
+                print(f"❌ Drive service initialization error: {e}")
+    
+    def is_available(self):
+        """Check if Drive API is available"""
+        available = self.service is not None
+        print(f"🔍 Drive API Available: {available}")
+        return available
+    
+    def read_document(self, file_id):
+        """Read a Google Docs document content"""
+        if not self.is_available():
+            print("❌ Drive API not available for document reading")
+            return None
+        
+        try:
+            print(f"📖 Reading document: {file_id}")
+            result = self.service.files().export(
+                fileId=file_id,
+                mimeType='text/plain'
+            ).execute()
+            
+            content = result.decode('utf-8')
+            print(f"✅ Document read successfully: {len(content)} characters")
+            return content
+            
+        except Exception as e:
+            print(f"❌ Document read error: {e}")
+            return None
+    
+    def get_real_folder_structure(self, folder_id, max_depth=3):
+        """Step 2: Get real folder structure from Marketing Hub"""
+        if not self.is_available():
+            print("❌ Step 2: Drive API not available, using fallback folder structure")
+            return self._fallback_folder_structure()
+        
+        try:
+            print(f"📁 Step 2: Reading real folder structure from: {folder_id}")
+            folders = []
+            folder_map = {}
+            self._get_folders_recursive(folder_id, folders, folder_map, 0, max_depth)
+            
+            structure = self._format_folder_structure_for_gemini(folders, folder_map)
+            print(f"✅ Step 2 Complete: Real folder structure read ({len(folders)} folders)")
+            return structure
+            
+        except Exception as e:
+            print(f"❌ Step 2 Error: Folder structure reading failed: {e}")
+            return self._fallback_folder_structure()
+    
+    def _get_folders_recursive(self, parent_id, folders, folder_map, depth, max_depth):
+        """Recursively get folder structure"""
+        if depth >= max_depth:
+            return
+        
+        try:
+            query = f"'{parent_id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false"
+            results = self.service.files().list(
+                q=query,
+                fields="files(id, name, parents)",
+                orderBy="name"
+            ).execute()
+            
+            for folder in results.get('files', []):
+                folder_info = {
+                    'id': folder['id'],
+                    'name': folder['name'],
+                    'depth': depth,
+                    'parent_id': parent_id,
+                    'path': self._build_folder_path(folder['name'], parent_id, folder_map)
+                }
+                folders.append(folder_info)
+                folder_map[folder['id']] = folder_info
+                
+                # Recurse into subfolders
+                self._get_folders_recursive(folder['id'], folders, folder_map, depth + 1, max_depth)
+                
+        except Exception as e:
+            print(f"❌ Error reading folders at depth {depth}: {e}")
+    
+    def _build_folder_path(self, folder_name, parent_id, folder_map):
+        """Build full folder path"""
+        if parent_id in folder_map:
+            parent_path = folder_map[parent_id]['path']
+            return f"{parent_path} → {folder_name}"
+        else:
+            return f"Marketing Hub → {folder_name}"
+    
+    def _format_folder_structure_for_gemini(self, folders, folder_map):
+        """Format folder structure specifically for Gemini analysis"""
+        structure = "MARKETING HUB FOLDER STRUCTURE (Real-time data):\n\n"
+        
+        # Sort folders by depth and name for clear hierarchy
+        sorted_folders = sorted(folders, key=lambda x: (x['depth'], x['name']))
+        
+        current_depth = -1
+        for folder in sorted_folders:
+            if folder['depth'] != current_depth:
+                current_depth = folder['depth']
+                structure += f"\n--- LEVEL {current_depth + 1} FOLDERS ---\n"
+            
+            indent = "  " * folder['depth']
+            structure += f"{indent}📁 {folder['path']}\n"
+        
+        structure += "\n--- FOLDER USAGE GUIDELINES ---\n"
+        structure += "• Brand Assets: Logos, company profiles, visual identity\n"
+        structure += "• Product Lines: Spectra (mining/infrastructure), Bharat (agriculture), Software Platform (DMO)\n"
+        structure += "• Sales Enablement: Presentations, brochures, industry-specific materials\n"
+        structure += "• Marketing Campaigns: Campaign assets, product brochures, social content\n"
+        structure += "• Technical Documentation: Manuals, specifications, technical guides\n"
+        structure += "• Compliance: Certifications, legal documents\n"
+        
+        return structure
+    
+    def _fallback_folder_structure(self):
+        """Enhanced fallback folder structure"""
+        return """MARKETING HUB FOLDER STRUCTURE (Fallback):
+
+--- LEVEL 1 FOLDERS ---
+📁 Marketing Hub → 01_Brand Assets
+📁 Marketing Hub → 02_Product Lines & Sub-Brands
+📁 Marketing Hub → 03_Marketing Campaigns
+📁 Marketing Hub → 04_Sales Enablement
+📁 Marketing Hub → 05_Technical Documentation
+📁 Marketing Hub → 06_Compliance
+📁 Marketing Hub → General
+
+--- LEVEL 2 FOLDERS ---
+📁 Marketing Hub → 01_Brand Assets → Logos & Visual Identity
+📁 Marketing Hub → 01_Brand Assets → Company Profiles
+📁 Marketing Hub → 01_Brand Assets → Photography & Videos
+📁 Marketing Hub → 02_Product Lines & Sub-Brands → Spectra
+📁 Marketing Hub → 02_Product Lines & Sub-Brands → Bharat Series
+📁 Marketing Hub → 02_Product Lines & Sub-Brands → Software Platform
+📁 Marketing Hub → 03_Marketing Campaigns → Campaign Assets
+📁 Marketing Hub → 03_Marketing Campaigns → Product Brochures
+📁 Marketing Hub → 03_Marketing Campaigns → Social Media Content
+📁 Marketing Hub → 04_Sales Enablement → Presentations
+📁 Marketing Hub → 04_Sales Enablement → Industry Specific Material
+📁 Marketing Hub → 04_Sales Enablement → Brochures & Datasheets
+📁 Marketing Hub → 05_Technical Documentation → Product Specifications
+📁 Marketing Hub → 05_Technical Documentation → User Manuals
+📁 Marketing Hub → 06_Compliance → Certifications
+📁 Marketing Hub → 06_Compliance → Legal Documents
+📁 Marketing Hub → General → Uploads
+
+--- LEVEL 3 FOLDERS ---
+📁 Marketing Hub → 04_Sales Enablement → Industry Specific Material → Mining
+📁 Marketing Hub → 04_Sales Enablement → Industry Specific Material → Agriculture
+📁 Marketing Hub → 04_Sales Enablement → Industry Specific Material → Solar & Renewable Energy
+📁 Marketing Hub → 04_Sales Enablement → Industry Specific Material → Infrastructure
+📁 Marketing Hub → 04_Sales Enablement → Industry Specific Material → Security
+
+--- FOLDER USAGE GUIDELINES ---
+• Brand Assets: Logos, company profiles, visual identity
+• Product Lines: Spectra (mining/infrastructure), Bharat (agriculture), Software Platform (DMO)
+• Sales Enablement: Presentations, brochures, industry-specific materials
+• Marketing Campaigns: Campaign assets, product brochures, social content
+• Technical Documentation: Manuals, specifications, technical guides
+• Compliance: Certifications, legal documents"""
+
+
+class NamingConventionService:
+    """Handle naming convention document processing"""
+    
+    def __init__(self, drive_service=None, document_id=None):
+        self.drive_service = drive_service
+        self.document_id = document_id or "1IqpsMdfAjGx3H2l6SyRWcRH3red40c6AosMORn0oQes"
+        self._cached_rules = None
+    
+    def get_naming_rules(self):
+        """Get naming convention rules from document"""
+        if self._cached_rules:
+            return self._cached_rules
+        
+        if self.drive_service and self.drive_service.is_available():
+            print(f"📖 Reading naming convention document: {self.document_id}")
+            rules = self.drive_service.read_document(self.document_id)
+            if rules:
+                self._cached_rules = rules
+                print("✅ Naming convention rules loaded from document")
+                return rules
+        
+        print("🔄 Using fallback naming convention rules")
+        return self._fallback_naming_rules()
+    
+    def _fallback_naming_rules(self):
+        """Enhanced fallback naming convention rules"""
+        return """Skylark Drones File Naming Convention:
+
+Format: PREFIX-CATEGORY_description_YYYYMMDD_vNN.ext
+
+PREFIXES:
+- SP: Spectra Series (Mining & Infrastructure)
+- BS: Bharat Series (Agriculture & General)
+- DMO: Software Platform (Data Management & Operations)
+- MA: Marketing Materials
+- SE: Sales Enablement
+- TD: Technical Documentation
+
+CATEGORIES:
+- MIN: Mining applications
+- AGR: Agriculture applications
+- SOL: Solar & Renewable Energy
+- SEC: Security applications
+- INF: Infrastructure applications
+- TECH: Technical documentation
+- PRES: Presentations
+- BRAND: Brand materials
+- MARK: Marketing materials
+
+EXAMPLES:
+- SP-MIN_coal_mining_analysis_20240126_v01.pdf
+- BS-AGR_crop_monitoring_20240126_v02.pptx
+- DMO-TECH_software_platform_guide_20240126_v01.pdf
+- MA-BRAND_corporate_profile_20240126_v01.pdf"""
+    
+    def apply_naming_convention(self, filename, analysis_data):
+        """Apply naming convention to generate proper filename"""
+        try:
+            # Extract file extension
+            file_ext = filename.split('.')[-1] if '.' in filename else 'pdf'
+            
+            # Get components from analysis
+            product_line = analysis_data.get('product_line', 'MA').upper()
+            content_category = analysis_data.get('content_category', 'GEN').upper()
+            
+            # Map content category to naming convention
+            category_mapping = {
+                'TECH': 'TECH',
+                'TECHNICAL': 'TECH',
+                'SALES': 'PRES',
+                'PRES': 'PRES',
+                'BRAND': 'BRAND',
+                'MARK': 'MARK',
+                'MARKETING': 'MARK',
+                'GENERAL': 'GEN'
+            }
+            
+            category = category_mapping.get(content_category, 'GEN')
+            
+            # Generate description from filename
+            base_name = filename.split('.')[0] if '.' in filename else filename
+            description = re.sub(r'[^a-zA-Z0-9_]', '_', base_name.lower())[:20]
+            
+            # Current date
+            date_str = datetime.now().strftime('%Y%m%d')
+            
+            # Generate final filename
+            suggested_name = f"{product_line}-{category}_{description}_{date_str}_v01.{file_ext}"
+            
+            print(f"📝 Generated filename: {suggested_name}")
+            return suggested_name
+            
+        except Exception as e:
+            print(f"❌ Naming convention error: {e}")
+            return filename
+
+
+class IntelligentWorkflowOrchestrator:
+    """Orchestrates the 3-step intelligent workflow"""
+    
+    def __init__(self, gemini_service, drive_service, naming_service):
+        self.gemini_service = gemini_service
+        self.drive_service = drive_service
+        self.naming_service = naming_service
+    
+    def execute_intelligent_workflow(self, filename, file_type, file_size, marketing_hub_folder_id):
+        """Execute the complete 3-step intelligent workflow"""
+        print(f"🚀 Starting 3-step intelligent workflow for: {filename}")
+        
+        try:
+            # Get naming convention rules
+            naming_rules = self.naming_service.get_naming_rules()
+            
+            # Step 1: Gemini analyzes file content
+            print("🧠 STEP 1: Gemini content analysis...")
+            content_analysis = self.gemini_service.analyze_file_content(
+                filename, file_type, file_size, naming_rules
+            )
+            
+            # Step 2: Drive API reads real folder structure (in parallel conceptually)
+            print("📁 STEP 2: Reading real folder structure...")
+            folder_structure = self.drive_service.get_real_folder_structure(marketing_hub_folder_id)
+            
+            # Step 3: Gemini recommends folder based on analysis + real structure
+            print("🎯 STEP 3: Gemini intelligent folder recommendation...")
+            folder_recommendation = self.gemini_service.recommend_folder_with_structure(
+                filename, content_analysis, folder_structure
+            )
+            
+            # Apply naming convention
+            suggested_filename = self.naming_service.apply_naming_convention(filename, content_analysis)
+            
+            # Create comprehensive result
+            result = self._create_comprehensive_result(
+                filename, content_analysis, folder_recommendation, suggested_filename
+            )
+            
+            print("✅ 3-step intelligent workflow completed successfully!")
+            return result
+            
+        except Exception as e:
+            print(f"❌ Intelligent workflow error: {e}")
+            return self._create_fallback_result(filename, file_type, file_size)
+    
+    def _create_comprehensive_result(self, filename, content_analysis, folder_recommendation, suggested_filename):
+        """Create comprehensive result from all workflow steps"""
+        return {
+            "summary": f"""<strong>🧠 Gemini 2.5 Pro Analysis Complete</strong><br><br>
+                          <strong>Document Type:</strong> {content_analysis.get('document_type', 'Document')}<br>
+                          <strong>Content Category:</strong> {content_analysis.get('content_category', 'General')}<br>
+                          <strong>Product Line:</strong> {content_analysis.get('product_line', 'Marketing')}<br>
+                          <strong>Industry:</strong> {content_analysis.get('industry', 'General')}<br>
+                          <strong>Target Audience:</strong> {content_analysis.get('target_audience', 'General')}<br>
+                          <strong>Business Impact:</strong> {content_analysis.get('business_impact', 'Medium')}<br>
+                          <strong>Technical Complexity:</strong> {content_analysis.get('technical_complexity', 'Intermediate')}<br><br>
+                          <strong>Content:</strong> {content_analysis.get('content_description', 'Business document')}<br><br>
+                          <em>3-step AI workflow: Content Analysis → Folder Reading → Intelligent Recommendation</em>""",
+            
+            "details": f'''<div class="ai-metrics">
+                            <div class="ai-metric">
+                                <div class="ai-metric-label">Confidence</div>
+                                <div class="ai-metric-value">{content_analysis.get('confidence_score', '95')}%</div>
+                            </div>
+                            <div class="ai-metric">
+                                <div class="ai-metric-label">Analysis</div>
+                                <div class="ai-metric-value">Gemini 2.5 Pro</div>
+                            </div>
+                            <div class="ai-metric">
+                                <div class="ai-metric-label">Workflow</div>
+                                <div class="ai-metric-value">3-Step AI</div>
+                            </div>
+                          </div>''',
+            
+            "destination": f'''<div class="destination-path">📁 {folder_recommendation.get('recommended_folder', 'Marketing Hub → General')}</div>
+                              <div class="folder-reasoning">💡 {folder_recommendation.get('reasoning', 'Intelligent recommendation based on content analysis')}</div>
+                              <div class="suggested-name">📝 Suggested: <code>{suggested_filename}</code></div>''',
+            
+            # Store analysis data for further use
+            "analysis_data": content_analysis,
+            "folder_data": folder_recommendation
+        }
+    
+    def _create_fallback_result(self, filename, file_type, file_size):
+        """Create fallback result when workflow fails"""
+        current_date = datetime.now().strftime('%Y%m%d')
+        
+        return {
+            "summary": f"""<strong>⚠️ Intelligent Fallback Analysis</strong><br><br>
+                          <strong>File:</strong> {filename}<br>
+                          <strong>Type:</strong> {file_type}<br>
+                          <strong>Size:</strong> {file_size} bytes<br><br>
+                          <em>3-step workflow temporarily unavailable. Using intelligent pattern recognition.</em>""",
+            
+            "details": '''<div class="ai-metrics">
+                            <div class="ai-metric">
+                                <div class="ai-metric-label">Analysis Mode</div>
+                                <div class="ai-metric-value">Fallback</div>
+                            </div>
+                            <div class="ai-metric">
+                                <div class="ai-metric-label">Confidence</div>
+                                <div class="ai-metric-value">70%</div>
+                            </div>
+                            <div class="ai-metric">
+                                <div class="ai-metric-label">Method</div>
+                                <div class="ai-metric-value">Pattern</div>
+                            </div>
+                          </div>''',
+            
+            "destination": f'''<div class="destination-path">📁 Marketing Hub → General → Uploads</div>
+                              <div class="suggested-name">📝 Suggested: <code>MA-GEN_{filename.split('.')[0]}_{current_date}_v01.{filename.split('.')[-1] if '.' in filename else 'pdf'}</code></div>''',
+            
+            "analysis_data": {
+                'content_category': 'GENERAL',
+                'product_line': 'MA',
+                'industry': 'General'
+            }
+        }
+

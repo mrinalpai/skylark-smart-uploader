@@ -1658,10 +1658,23 @@ def gemini_analyze():
 def upload_file():
     """Enhanced file upload with real Google Drive integration"""
     try:
-        # Check authentication
+        # Comprehensive authentication check with debugging
         access_token = session.get('access_token')
-        if not access_token:
-            return jsonify({"status": "error", "message": "Not authenticated"}), 401
+        user_info = session.get('user_info')
+        
+        print(f"🔍 Upload Authentication Debug:")
+        print(f"   - access_token present: {bool(access_token)}")
+        print(f"   - user_info present: {bool(user_info)}")
+        print(f"   - session keys: {list(session.keys())}")
+        
+        # More flexible authentication check
+        if not access_token and not user_info:
+            print("❌ No authentication found - returning 401")
+            return jsonify({"status": "error", "message": "Not authenticated - please log in again"}), 401
+        
+        # If we have user_info but no access_token, try to proceed with limited functionality
+        if not access_token and user_info:
+            print("⚠️ User authenticated but no access token - proceeding with fallback mode")
         
         # Get uploaded file and analysis data
         file = request.files.get('file')
@@ -1681,7 +1694,7 @@ def upload_file():
         file_size = file.tell()
         file.seek(0)  # Reset to beginning
         
-        # Initialize services with user credentials
+        # Initialize services with user credentials (with fallback)
         access_token = session.get('access_token')
         refresh_token = session.get('refresh_token')
         credentials = None
@@ -1696,9 +1709,14 @@ def upload_file():
                     client_secret=GOOGLE_CLIENT_SECRET,
                     scopes=['https://www.googleapis.com/auth/drive']
                 )
+                print("✅ Credentials created successfully for upload")
             except Exception as e:
                 print(f"❌ Error creating credentials for upload: {e}")
+                credentials = None
+        else:
+            print("⚠️ No access token available - proceeding without Drive credentials")
         
+        # Initialize services (they should handle None credentials gracefully)
         drive_service = DriveService(credentials)
         naming_service = NamingConventionService(drive_service, NAMING_CONVENTION_DOC_ID)
         
@@ -1708,11 +1726,13 @@ def upload_file():
             analysis.get('analysis_data', {})
         )
         
-        # Try to upload to Google Drive
+        # Try to upload to Google Drive (with comprehensive fallback)
         file_id = None
         folder_path = "Marketing Hub/02_Product Lines & Sub-Brands/General"  # Default
         
-        if drive_service.is_available():
+        print(f"🔍 Drive service available: {drive_service.is_available() if drive_service else False}")
+        
+        if drive_service and drive_service.is_available():
             try:
                 # Debug: Print the analysis data to see what we're getting
                 print(f"🔍 DEBUG: Full analysis data: {analysis}")
@@ -1761,22 +1781,28 @@ def upload_file():
                 "naming_convention_applied": True
             }
         else:
-            # Fallback response (file not actually uploaded)
+            # Fallback response (file not actually uploaded but processed)
+            print("⚠️ Drive service not available - generating fallback response")
             fallback_file_id = f"1SKY{datetime.now().strftime('%Y%m%d%H%M%S')}{secrets.token_hex(4)}"
+            
+            # Get folder path from analysis if available
+            if analysis and 'folder_data' in analysis:
+                folder_path = analysis['folder_data'].get('recommended_folder', folder_path)
+            
             upload_response = {
                 "status": "success",
-                "message": "File processed successfully (Drive upload unavailable)",
+                "message": "File analyzed successfully - Drive upload requires re-authentication",
                 "file_id": fallback_file_id,
-                "file_link": f"https://drive.google.com/file/d/{fallback_file_id}/view",
+                "file_link": "https://drive.google.com/drive/folders/" + MARKETING_HUB_FOLDER_ID,  # Link to Marketing Hub
                 "original_name": file.filename,
                 "final_name": suggested_filename,
                 "folder_path": folder_path,
                 "upload_time": datetime.now().isoformat(),
-                "file_url": f"https://drive.google.com/file/d/{fallback_file_id}/view",
+                "file_url": "https://drive.google.com/drive/folders/" + MARKETING_HUB_FOLDER_ID,
                 "ai_engine": "Google Gemini 2.5 Pro (Analysis Only)",
                 "file_size": file_size,
                 "content_type": file.content_type,
-                "analysis_confidence": "85%",
+                "analysis_confidence": analysis.get('folder_data', {}).get('confidence', '85') + '%' if analysis else "85%",
                 "naming_convention_applied": True,
                 "note": "Drive upload requires authentication"
             }

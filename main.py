@@ -1382,13 +1382,20 @@ def upload_file():
             try:
                 # Get the folder recommendation from analysis
                 folder_recommendation = analysis.get('folder_data', {})
-                recommended_folder = folder_recommendation.get('recommended_folder', folder_path)
+                recommended_folder_path = folder_recommendation.get('recommended_folder', folder_path)
                 
-                # Upload file to Google Drive
-                file_id = upload_to_drive(drive_service.service, file, suggested_filename, MARKETING_HUB_FOLDER_ID)
-                folder_path = recommended_folder
+                # Find the actual folder ID for the recommended path
+                target_folder_id = find_folder_by_path(drive_service.service, recommended_folder_path, MARKETING_HUB_FOLDER_ID)
                 
-                print(f"✅ File uploaded to Google Drive: {file_id}")
+                if not target_folder_id:
+                    print(f"⚠️ Could not find folder for path: {recommended_folder_path}, using Marketing Hub root")
+                    target_folder_id = MARKETING_HUB_FOLDER_ID
+                
+                # Upload file to the correct folder
+                file_id = upload_to_drive(drive_service.service, file, suggested_filename, target_folder_id)
+                folder_path = recommended_folder_path
+                
+                print(f"✅ File uploaded to Google Drive: {file_id} in folder: {recommended_folder_path}")
                 
             except Exception as e:
                 print(f"❌ Drive upload failed: {e}")
@@ -1443,6 +1450,53 @@ def upload_file():
             "status": "error",
             "message": f"Upload failed: {str(e)}"
         }), 500
+
+
+def find_folder_by_path(drive_service, folder_path, root_folder_id):
+    """Find folder ID by path like 'Marketing Hub → 01_Brand Assets → Company Profiles'"""
+    try:
+        # Parse the folder path
+        if '→' not in folder_path:
+            return root_folder_id
+        
+        # Split path and remove 'Marketing Hub' prefix
+        path_parts = [part.strip() for part in folder_path.split('→')]
+        if path_parts[0] == 'Marketing Hub':
+            path_parts = path_parts[1:]  # Remove 'Marketing Hub' prefix
+        
+        if not path_parts:
+            return root_folder_id
+        
+        current_folder_id = root_folder_id
+        
+        # Navigate through each folder level
+        for folder_name in path_parts:
+            print(f"🔍 Looking for folder: '{folder_name}' in {current_folder_id}")
+            
+            # Search for folder with this name in current directory
+            query = f"'{current_folder_id}' in parents and mimeType='application/vnd.google-apps.folder' and name='{folder_name}' and trashed=false"
+            results = drive_service.files().list(
+                q=query,
+                fields="files(id, name)",
+                pageSize=10
+            ).execute()
+            
+            folders = results.get('files', [])
+            
+            if not folders:
+                print(f"❌ Folder '{folder_name}' not found in path")
+                return None
+            
+            # Use the first matching folder
+            current_folder_id = folders[0]['id']
+            print(f"✅ Found folder: '{folder_name}' -> {current_folder_id}")
+        
+        print(f"✅ Final folder ID for path '{folder_path}': {current_folder_id}")
+        return current_folder_id
+        
+    except Exception as e:
+        print(f"❌ Error finding folder by path '{folder_path}': {e}")
+        return None
 
 
 def upload_to_drive(drive_service, file, filename, parent_folder_id):

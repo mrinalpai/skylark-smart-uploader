@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block title %}Smart Uploader - {{ config.name }}{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 sm:px-0">
+    <div class="max-w-4xl mx-auto">
+        <!-- Tool Header -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <div class="flex items-center mb-6">
+                <span class="text-4xl mr-4">📤</span>
+                <div>
+                    <h1 class="text-3xl font-bold text-gray-900">Smart Uploader</h1>
+                    <p class="text-gray-600">AI-powered file organization for Marketing Hub</p>
+                </div>
+            </div>
+            
+            <!-- Integration Notice -->
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                <div class="flex items-start">
+                    <svg class="w-6 h-6 text-blue-600 mt-1 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                    </svg>
+                    <div>
+                        <h3 class="text-lg font-semibold text-blue-900 mb-2">Platform Integration in Progress</h3>
+                        <p class="text-blue-800 mb-4">We're currently integrating the Smart Uploader into the SkylarkCloud platform. For now, you can access the full functionality through the original interface.</p>
+                        
+                        <div class="flex space-x-4">
+                            <a href="https://skylark-smart-uploader.el.r.appspot.com" 
+                               target="_blank"
+                               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                Launch Original Smart Uploader
+                                <svg class="ml-2 -mr-1 w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            </a>
+                            
+                            <a href="/" 
+                               class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                Back to Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Features Overview -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Smart Uploader Features</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0">
+                        <span class="text-2xl">🧠</span>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-900">AI Analysis</h3>
+                        <p class="text-gray-600 text-sm">Gemini 2.5 Pro content understanding and categorization</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0">
+                        <span class="text-2xl">📁</span>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-900">Smart Organization</h3>
+                        <p class="text-gray-600 text-sm">Automatic folder placement in Marketing Hub</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0">
+                        <span class="text-2xl">📋</span>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-900">Naming Convention</h3>
+                        <p class="text-gray-600 text-sm">Dynamic rule application from Google Doc</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0">
+                        <span class="text-2xl">⚡</span>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-900">Performance</h3>
+                        <p class="text-gray-600 text-sm">Version-based caching and optimized processing</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Performance Metrics</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-green-600">$0.027</div>
+                    <div class="text-sm text-gray-600">Cost per file processed</div>
+                </div>
+                
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-blue-600">7,500%</div>
+                    <div class="text-sm text-gray-600">Return on investment</div>
+                </div>
+                
+                <div class="text-center">
+                    <div class="text-3xl font-bold text-purple-600">95%+</div>
+                    <div class="text-sm text-gray-600">Organization accuracy</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

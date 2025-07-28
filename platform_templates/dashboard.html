@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - {{ config.name }}{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 sm:px-0">
+    <!-- Welcome Section -->
+    <div class="bg-white overflow-hidden shadow rounded-lg mb-8">
+        <div class="px-4 py-5 sm:p-6">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <span class="text-4xl">🎯</span>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Welcome to</dt>
+                        <dd class="text-lg font-medium text-gray-900">{{ config.name }} Platform</dd>
+                    </dl>
+                </div>
+            </div>
+            <div class="mt-4">
+                <p class="text-gray-600">{{ config.description }}</p>
+                <p class="text-sm text-gray-500 mt-2">Transform your workflows with AI-powered tools designed for modern teams.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tools Grid -->
+    <div class="mb-8">
+        <h2 class="text-2xl font-bold text-gray-900 mb-6">Available Tools</h2>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {% for tool in config.tools %}
+            <div class="tool-card bg-white overflow-hidden shadow rounded-lg {% if tool.status == 'coming-soon' %}coming-soon{% endif %}">
+                <div class="p-6">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <span class="text-3xl">{{ tool.icon }}</span>
+                        </div>
+                        <div class="ml-5 w-0 flex-1">
+                            <dl>
+                                <dt class="text-sm font-medium text-gray-500 truncate">{{ tool.category }}</dt>
+                                <dd class="text-lg font-medium text-gray-900">{{ tool.name }}</dd>
+                            </dl>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <p class="text-gray-600 text-sm">{{ tool.description }}</p>
+                    </div>
+                    
+                    <div class="mt-6">
+                        {% if tool.status == 'active' %}
+                            <a href="{{ tool.url }}" 
+                               onclick="trackToolClick('{{ tool.id }}')"
+                               class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                                Launch Tool
+                                <svg class="ml-2 -mr-1 w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                                </svg>
+                            </a>
+                        {% else %}
+                            <button disabled 
+                                    class="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-500 bg-gray-100 cursor-not-allowed">
+                                Coming Soon
+                                <svg class="ml-2 -mr-1 w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                                </svg>
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Platform Stats -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Platform Overview</h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-blue-600">{{ config.tools | selectattr('status', 'equalto', 'active') | list | length }}</div>
+                    <div class="text-sm text-gray-500">Active Tools</div>
+                </div>
+                
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-yellow-600">{{ config.tools | selectattr('status', 'equalto', 'coming-soon') | list | length }}</div>
+                    <div class="text-sm text-gray-500">Coming Soon</div>
+                </div>
+                
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-green-600">{{ config.tools | length }}</div>
+                    <div class="text-sm text-gray-500">Total Tools</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="mt-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg shadow-lg">
+        <div class="px-6 py-8 text-center">
+            <h3 class="text-xl font-bold text-white mb-2">Ready to get started?</h3>
+            <p class="text-blue-100 mb-4">Launch the Smart Uploader to begin organizing your files with AI.</p>
+            <a href="/tools/smart-uploader" 
+               class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Get Started
+                <svg class="ml-2 -mr-1 w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                </svg>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

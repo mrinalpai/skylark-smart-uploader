@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}About - {{ config.name }}{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 sm:px-0">
+    <div class="max-w-4xl mx-auto">
+        <!-- Hero Section -->
+        <div class="text-center mb-12">
+            <span class="text-6xl mb-6 block">🚀</span>
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">{{ config.name }}</h1>
+            <p class="text-xl text-gray-600">{{ config.description }}</p>
+        </div>
+
+        <!-- Mission -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">Our Mission</h2>
+            <p class="text-gray-600 text-lg leading-relaxed">
+                Transform how teams work with their digital assets through AI-powered tools that understand context, 
+                automate repetitive tasks, and enhance productivity. We believe that intelligent automation should 
+                enhance human creativity, not replace it.
+            </p>
+        </div>
+
+        <!-- Platform Overview -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Platform Overview</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3">Current Tools</h3>
+                    <ul class="space-y-2">
+                        <li class="flex items-center">
+                            <span class="text-green-500 mr-2">✓</span>
+                            <span class="text-gray-700">Smart Uploader - AI-powered file organization</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-900 mb-3">Coming Soon</h3>
+                    <ul class="space-y-2">
+                        <li class="flex items-center">
+                            <span class="text-yellow-500 mr-2">⏳</span>
+                            <span class="text-gray-700">Smart Search - Intelligent file discovery</span>
+                        </li>
+                        <li class="flex items-center">
+                            <span class="text-blue-500 mr-2">🔮</span>
+                            <span class="text-gray-700">Sales Tools - AI-powered sales enablement</span>
+                        </li>
+                        <li class="flex items-center">
+                            <span class="text-blue-500 mr-2">🔮</span>
+                            <span class="text-gray-700">HR Tools - Intelligent recruitment and development</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Technology -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Technology Stack</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="text-center">
+                    <div class="text-3xl mb-2">🤖</div>
+                    <h3 class="font-semibold text-gray-900">AI & Machine Learning</h3>
+                    <p class="text-gray-600 text-sm">Google Gemini 2.5 Pro for content understanding and analysis</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="text-3xl mb-2">☁️</div>
+                    <h3 class="font-semibold text-gray-900">Cloud Infrastructure</h3>
+                    <p class="text-gray-600 text-sm">Google Cloud Platform for scalable, secure deployment</p>
+                </div>
+                
+                <div class="text-center">
+                    <div class="text-3xl mb-2">🔗</div>
+                    <h3 class="font-semibold text-gray-900">Integration</h3>
+                    <p class="text-gray-600 text-sm">Seamless Google Workspace integration and OAuth security</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg shadow-lg text-white p-8">
+            <h2 class="text-2xl font-bold mb-6">Platform Impact</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 text-center">
+                <div>
+                    <div class="text-3xl font-bold">$0.027</div>
+                    <div class="text-blue-100">Cost per file</div>
+                </div>
+                
+                <div>
+                    <div class="text-3xl font-bold">7,500%</div>
+                    <div class="text-blue-100">ROI achieved</div>
+                </div>
+                
+                <div>
+                    <div class="text-3xl font-bold">95%+</div>
+                    <div class="text-blue-100">Accuracy rate</div>
+                </div>
+                
+                <div>
+                    <div class="text-3xl font-bold">80%</div>
+                    <div class="text-blue-100">Time saved</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

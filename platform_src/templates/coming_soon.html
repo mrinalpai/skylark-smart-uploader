@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+
+{% block title %}{{ tool_name }} - Coming Soon - {{ config.name }}{% endblock %}
+
+{% block content %}
+<div class="px-4 py-6 sm:px-0">
+    <div class="max-w-3xl mx-auto">
+        <!-- Coming Soon Hero -->
+        <div class="text-center mb-12">
+            <div class="mx-auto h-24 w-24 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mb-6">
+                <span class="text-4xl">🔍</span>
+            </div>
+            
+            <h1 class="text-4xl font-bold text-gray-900 mb-4">{{ tool_name }}</h1>
+            <p class="text-xl text-gray-600 mb-6">{{ tool_description }}</p>
+            
+            <div class="inline-flex items-center px-6 py-3 border-2 border-yellow-400 text-yellow-700 bg-yellow-50 rounded-full font-medium">
+                <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"></path>
+                </svg>
+                Coming Soon
+            </div>
+        </div>
+
+        <!-- Features Preview -->
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">What to Expect</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0">
+                        <span class="text-2xl">🤖</span>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-900">AI-Powered Search</h3>
+                        <p class="text-gray-600 text-sm">Natural language queries that understand context and intent</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0">
+                        <span class="text-2xl">💬</span>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-900">Chat Interface</h3>
+                        <p class="text-gray-600 text-sm">Conversational search experience like talking to an assistant</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0">
+                        <span class="text-2xl">⚡</span>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-900">Instant Results</h3>
+                        <p class="text-gray-600 text-sm">Fast, relevant results with rich previews and suggestions</p>
+                    </div>
+                </div>
+                
+                <div class="flex items-start space-x-3">
+                    <div class="flex-shrink-0">
+                        <span class="text-2xl">🔗</span>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-900">Smart Integration</h3>
+                        <p class="text-gray-600 text-sm">Seamlessly connected with Smart Uploader organization</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Example Queries -->
+        <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-8 mb-8">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">Example Queries You'll Be Able to Use</h2>
+            
+            <div class="space-y-4">
+                <div class="bg-white rounded-lg p-4 shadow-sm">
+                    <p class="text-gray-800 font-medium">"Find Q4 sales presentations for mining clients"</p>
+                    <p class="text-gray-600 text-sm mt-1">Natural language search that understands business context</p>
+                </div>
+                
+                <div class="bg-white rounded-lg p-4 shadow-sm">
+                    <p class="text-gray-800 font-medium">"Show me recent campaign materials for aerospace industry"</p>
+                    <p class="text-gray-600 text-sm mt-1">Time-aware and industry-specific content discovery</p>
+                </div>
+                
+                <div class="bg-white rounded-lg p-4 shadow-sm">
+                    <p class="text-gray-800 font-medium">"What presentations mention sustainability or green technology?"</p>
+                    <p class="text-gray-600 text-sm mt-1">Content-based search that understands themes and topics</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Current Alternative -->
+        <div class="bg-white rounded-lg shadow-lg p-8 text-center">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4">In the Meantime</h2>
+            <p class="text-gray-600 mb-6">Use the Smart Uploader to organize your files with AI. The better organized your files are, the more powerful Smart Search will be when it launches!</p>
+            
+            <a href="/tools/smart-uploader" 
+               class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                Try Smart Uploader
+                <svg class="ml-2 -mr-1 w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                </svg>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

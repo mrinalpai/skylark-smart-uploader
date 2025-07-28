@@ -22,7 +22,7 @@ PLATFORM_CONFIG = {
             'description': 'AI-powered file organization for Marketing Hub',
             'icon': '📤',
             'status': 'active',
-            'url': '/tools/smart-uploader',
+            'url': 'https://skylark-smart-uploader.el.r.appspot.com/upload',
             'category': 'Marketing'
         },
         {
